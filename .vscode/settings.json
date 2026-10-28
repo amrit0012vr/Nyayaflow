@@ -8,11 +8,14 @@
         "${workspaceFolder}/backend",
         "${workspaceFolder}"
     ],
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "off",
     "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportMissingModuleSource": "none",
         "reportUnusedImport": "none",
         "reportUnusedVariable": "none",
-        "reportMissingImports": "none"
+        "reportGeneralTypeIssues": "none",
+        "reportOptionalMemberAccess": "none"
     },
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda"
