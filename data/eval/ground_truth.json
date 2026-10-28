@@ -1,0 +1,25 @@
+{
+  "test_cases": [
+    {
+      "case_number": "BAIL/DEL/2026/0412",
+      "expected_tier": "critical",
+      "custody_months": 14,
+      "urgency_rationale": "Undertrial in custody for 14 months without commencement of trial; right to bail under Article 21 and Section 439 CrPC / 483 BNSS."
+    },
+    {
+      "case_number": "WP/DEL/2026/1849",
+      "expected_tier": "high",
+      "urgency_rationale": "Senior citizen (74 yrs), limitation deadline pending in 6 days."
+    },
+    {
+      "case_number": "CS/DEL/2024/0891",
+      "expected_tier": "low",
+      "urgency_rationale": "Commercial recovery dispute without custodial emergency or statutory expiry."
+    },
+    {
+      "case_number": "MISC/DEL/2026/0044",
+      "expected_tier": "low",
+      "urgency_rationale": "Administrative court record room inspection."
+    }
+  ]
+}
