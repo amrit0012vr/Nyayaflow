@@ -177,3 +177,4 @@ def process_case(
         return {"status": "success", "pipeline_results": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline processing failed: {str(e)}")
+

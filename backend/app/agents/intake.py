@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 class IntakeAgent:
     """
@@ -77,3 +77,4 @@ class IntakeAgent:
             "custody_detected": custody_detected,
             "custody_detail": custody_detail
         }
+

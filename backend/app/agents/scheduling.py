@@ -123,3 +123,4 @@ class SchedulingAgent:
             "suggestions": top_suggestions,
             "conflicts": conflicts
         }
+

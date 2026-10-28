@@ -37,3 +37,4 @@ def decrypt_string(encrypted_b64: str) -> str:
     encrypted_bytes = base64.b64decode(encrypted_b64.encode("ascii"))
     decrypted = decrypt_bytes(encrypted_bytes)
     return decrypted.decode("utf-8")
+

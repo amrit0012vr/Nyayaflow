@@ -1,4 +1,3 @@
-import io
 from typing import List, Dict, Any
 
 class OCRService:
@@ -62,3 +61,4 @@ class OCRService:
                 })
 
         return pages if pages else [{"page": 1, "text": raw_text.strip(), "char_count": len(raw_text)}]
+

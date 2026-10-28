@@ -46,3 +46,4 @@ jobs:
       - name: Build Frontend Production Artifacts
         working-directory: ./frontend
         run: npm run build
+

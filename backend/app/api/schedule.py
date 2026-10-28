@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from app.models.database import get_db, Case, Hearing, TriageResult
@@ -98,3 +97,4 @@ def list_hearings(
             "status": h.status
         })
     return results
+

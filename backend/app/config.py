@@ -27,3 +27,4 @@ class Settings(BaseModel):
 
 settings = Settings()
 settings.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+

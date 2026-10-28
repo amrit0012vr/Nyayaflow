@@ -9,7 +9,7 @@ class CitationVerifier:
     Prevents hallucination and ensures judicial explainability.
     """
     @staticmethod
-    def verify_citations(db: Session, case_id: str, citations: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def verify_citations(db: Session, _case_id: str, citations: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Validates a list of citations: [{'document_id': '...', 'page': 1, 'span': [100, 250], 'excerpt': '...'}]
         """

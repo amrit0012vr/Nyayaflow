@@ -16,3 +16,4 @@ The State shall secure that the operation of the legal system promotes justice, 
 ## 3. National Legal Services Authority (NALSA) Helpline
 - Toll-Free National Legal Aid Helpline: 15100 (24x7)
 - Legal Aid Defense Counsel System (LADC): Dedicated criminal defense advocates appointed for undertrials.
+

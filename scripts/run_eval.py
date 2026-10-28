@@ -1,15 +1,13 @@
 import sys
-import json
 from pathlib import Path
 
 # Add backend directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 
-from app.models.database import SessionLocal, Case, Document, TriageResult, Summary, AuditLog
+from app.models.database import SessionLocal, Case, TriageResult, Summary, AuditLog
 from app.agents.intake import IntakeAgent
 from app.agents.triage import TriageAgent
 from app.agents.scheduling import SchedulingAgent
-from app.services.verification import CitationVerifier
 from app.services.audit import verify_audit_chain, simulate_tampering_for_demo
 
 def run_system_evaluation():
@@ -71,8 +69,8 @@ def run_system_evaluation():
         # 4. Scheduling Engine Priority Placement
         case_critical = db.query(Case).filter(Case.case_number.like("%BAIL%")).first()
         sched_res = SchedulingAgent.suggest_slots(case_critical, 85, [])
-        earliest_slot_day = int(sched_res["suggestions"][0]["slot_start"][8:10]) if sched_res["suggestions"] else 99
-        eval_results["Scheduling Optimality"] = f"Top slot score: {sched_res['suggestions'][0]['score'] if sched_res['suggestions'] else 0} (Expedited)"
+        top_score = sched_res["suggestions"][0]["score"] if sched_res["suggestions"] else 0
+        eval_results["Scheduling Optimality"] = f"Top slot score: {top_score} (Expedited)"
         print(f"4. Scheduling Optimization  : {eval_results['Scheduling Optimality']}")
 
         # 5. Security & Cryptographic Integrity Chain

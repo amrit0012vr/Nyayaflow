@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Auth Schemas
 class UserLogin(BaseModel):
@@ -196,3 +196,4 @@ class AuditVerifyResponse(BaseModel):
 class TamperSimulateRequest(BaseModel):
     entry_id: int
     tampered_action: str
+

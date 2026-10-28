@@ -31,3 +31,4 @@ def compute_audit_entry_hash(
     details_str = json.dumps(details or {}, sort_keys=True)
     raw = f"{prev_hash}|{timestamp_iso}|{actor_id}|{action}|{object_type}|{object_id}|{details_str}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+

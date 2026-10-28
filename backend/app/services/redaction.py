@@ -109,3 +109,4 @@ class RedactionService:
             except Exception:
                 continue
         return unmasked
+

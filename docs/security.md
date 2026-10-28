@@ -21,3 +21,4 @@ $$\text{entry\_hash}_n = \text{SHA256}(\text{prev\_hash}_{n-1} \parallel \text{t
 Before text is processed by LLMs or external agents:
 - Names, mobile numbers, Aadhaar IDs, PAN cards, and addresses are masked into tokens (`[PHONE_1]`, `[AADHAAR_1]`).
 - Original values are encrypted and stored in a separate restricted table (`redaction_map`), accessible only with judicial authorization and logged in the audit trail.
+

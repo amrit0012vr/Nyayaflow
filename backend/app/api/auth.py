@@ -40,3 +40,4 @@ def login(creds: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me")
 def get_current_user(current_user: dict = Depends(get_current_user_payload)):
     return current_user
+

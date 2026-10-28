@@ -25,3 +25,4 @@ def test_tampered_ciphertext_fails_auth():
     tampered[-1] ^= 0xFF
     with pytest.raises(Exception):
         decrypt_bytes(bytes(tampered))
+

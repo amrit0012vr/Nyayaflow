@@ -132,3 +132,4 @@ python scripts/verify_audit_chain.py
 
 ## 📜 Licence
 Apache-2.0 License. See [LICENSE](LICENSE) for details.
+

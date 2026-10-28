@@ -82,3 +82,4 @@ export interface AuditEntry {
   prev_hash: string;
   entry_hash: string;
 }
+

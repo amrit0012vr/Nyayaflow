@@ -384,3 +384,4 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ language, setLangu
     </div>
   );
 };
+

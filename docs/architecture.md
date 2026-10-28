@@ -62,3 +62,4 @@ flowchart TD
 4. **Citation Verifier:** Validates every generated sentence against stored chunk excerpts to prevent hallucinations.
 5. **Scheduling Agent:** CP-SAT constraint optimization allocating hearing slots while avoiding holidays and grouping related cases.
 6. **Legal Aid Agent:** Multilingual citizen interface providing NALSA/DLSA guidance and automated Section 12 eligibility checks.
+

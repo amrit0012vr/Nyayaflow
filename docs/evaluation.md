@@ -18,3 +18,4 @@ Automated evaluation script: `scripts/run_eval.py`
 
 1. **Anti-Hallucination Guardrail:** The citation verifier validates factual citations against original document chunk spans, rejecting claims that cannot be anchored to source text.
 2. **Transparent Triage:** Prioritizes undertrial prisoners languishing in custody for over 12 months (30 points) and imminent statutory limitation deadlines (20 points), matching expert legal judgment.
+

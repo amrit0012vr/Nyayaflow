@@ -56,3 +56,4 @@ Indian courts carry a very large backlog of pending cases. Delay hurts people di
 NyayaFlow has two layers:
 - **Layer A — Secure Document Core (Foundation):** AES-256 encryption at rest, SHA-256 integrity verification, append-only tamper-evident hash-chained audit logging, strict Role-Based Access Control (Judge, Clerk, Lawyer, Police/IO, Citizen, Admin, Auditor).
 - **Layer B — Agentic Intelligence (Differentiator):** Multi-agent orchestrator coordinating Intake, Triage, Summarisation, Scheduling, and Legal Aid agents with human-in-the-loop review and citation verification.
+

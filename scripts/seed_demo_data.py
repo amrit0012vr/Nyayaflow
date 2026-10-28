@@ -1,4 +1,3 @@
-import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -6,7 +5,7 @@ from pathlib import Path
 # Add backend directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 
-from app.models.database import User, Case, Document, DocumentVersion, TriageResult, Summary, Hearing, init_db, SessionLocal
+from app.models.database import User, Case, init_db, SessionLocal
 from app.core.security import hash_password
 from app.services.documents import store_case_document
 from app.services.audit import log_audit_action
@@ -217,3 +216,4 @@ if __name__ == "__main__":
         seed_database_if_empty(db)
     finally:
         db.close()
+

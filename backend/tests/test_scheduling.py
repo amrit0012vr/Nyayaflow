@@ -16,3 +16,4 @@ def test_scheduling_excludes_holidays_and_weekends():
         date_str = s["slot_start"][:10]
         assert date_str not in SchedulingAgent.COURT_HOLIDAYS
         assert s["score"] > 0
+

@@ -1,5 +1,5 @@
 from typing import Dict, Any, List
-from app.models.database import Case, Document, Chunk
+from app.models.database import Case, Document
 
 class SummarisationAgent:
     """

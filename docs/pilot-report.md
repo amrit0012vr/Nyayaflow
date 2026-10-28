@@ -17,3 +17,4 @@ A small, rigorous pilot was conducted with 3 independent legal testers (an advoc
 
 > *"In busy trial courts, urgent undertrial bail pleas are frequently delayed because case files are massive and unstructured. NyayaFlow’s 1-page briefs and transparent urgency scores enable the bench to instantly identify undertrials who have been detained for prolonged periods without trial completion."*
 > — Advocate Meera Sen, Delhi Bar Association Pilot Tester
+

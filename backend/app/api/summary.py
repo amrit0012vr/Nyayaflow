@@ -35,3 +35,4 @@ def get_summary(
         pending_deadlines=summary.pending_deadlines or [],
         citations_verified=summary.citations_verified
     )
+

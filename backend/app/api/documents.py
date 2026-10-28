@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response
 from sqlalchemy.orm import Session
 from app.models.database import get_db, Case, Document, DocumentVersion
-from app.schemas.schemas import DocumentOut, DocumentVersionOut
+from app.schemas.schemas import DocumentVersionOut
 from app.core.rbac import get_current_user_payload
 from app.services.documents import store_case_document, retrieve_and_decrypt_document
 from app.agents.orchestrator import OrchestratorAgent
@@ -110,3 +110,4 @@ def download_document(
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+

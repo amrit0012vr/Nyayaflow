@@ -115,3 +115,4 @@ def simulate_tampering_for_demo(db: Session, entry_id: int, fake_action: str = "
     entry.action = fake_action
     db.commit()
     return {"success": True, "message": f"Corrupted entry #{entry_id} with fake action '{fake_action}'."}
+

@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.models.database import Document, DocumentVersion
@@ -129,3 +128,4 @@ def retrieve_and_decrypt_document(
     )
 
     return decrypted_bytes, version
+

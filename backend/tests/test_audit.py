@@ -35,3 +35,4 @@ def test_tamper_detection_in_audit_chain():
         assert restored_check["is_valid"] is True
     finally:
         db.close()
+
