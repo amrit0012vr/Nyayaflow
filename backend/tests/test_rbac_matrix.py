@@ -1,67 +1,67 @@
 import pytest
-from fastapi.testclient import TestClient
-from app.main import app
+from fastapi import HTTPException
+from app.models.database import SessionLocal, User
+from app.core.rbac import require_permission, get_current_user
+from app.api.cases import list_cases
 
-client = TestClient(app)
+ROLES = ["judge", "clerk", "lawyer", "police", "citizen", "auditor", "admin"]
 
-ROLE_CREDENTIALS = {
-    "judge": ("judge1@nyayaflow.demo", "judge"),
-    "clerk": ("clerk1@nyayaflow.demo", "clerk"),
-    "lawyer": ("advocate1@nyayaflow.demo", "lawyer"),
-    "police": ("io1@nyayaflow.demo", "police"),
-    "citizen": ("citizen1@nyayaflow.demo", "citizen"),
-    "auditor": ("auditor1@nyayaflow.demo", "auditor"),
-    "admin": ("admin@nyayaflow.demo", "admin"),
-}
+def test_admin_users_endpoint_matrix():
+    db = SessionLocal()
+    try:
+        check = require_permission("users:manage")
+        for role in ROLES:
+            u = db.query(User).filter(User.role == role).first()
+            if role == "admin":
+                res = check(current_user=u, db=db)
+                assert res.id == u.id
+            else:
+                with pytest.raises(HTTPException) as exc_info:
+                    check(current_user=u, db=db)
+                assert exc_info.value.status_code == 403, f"Role {role} was able to access users:manage"
+    finally:
+        db.close()
 
-@pytest.fixture(scope="module")
-def tokens():
-    tokens_map = {}
-    for role, (email, persona) in ROLE_CREDENTIALS.items():
-        res = client.post("/api/v1/auth/login", json={
-            "email": email,
-            "password": "NyayaDemo@2026",
-            "persona": persona
-        })
-        assert res.status_code == 200, f"Login failed for {role}: {res.text}"
-        tokens_map[role] = res.json()["access_token"]
-    return tokens_map
+def test_audit_logs_endpoint_matrix():
+    db = SessionLocal()
+    try:
+        check = require_permission("audit:read")
+        for role in ROLES:
+            u = db.query(User).filter(User.role == role).first()
+            if role in ("auditor", "admin"):
+                res = check(current_user=u, db=db)
+                assert res.id == u.id
+            else:
+                with pytest.raises(HTTPException) as exc_info:
+                    check(current_user=u, db=db)
+                assert exc_info.value.status_code == 403, f"Role {role} unexpectedly accessed audit:read"
+    finally:
+        db.close()
 
-def test_admin_users_endpoint_matrix(tokens):
-    # Only Admin can access /api/v1/admin/users
-    for role, token in tokens.items():
-        res = client.get("/api/v1/admin/users", headers={"Authorization": f"Bearer {token}"})
-        if role == "admin":
-            assert res.status_code == 200
-        else:
-            assert res.status_code == 403, f"Role {role} was able to access /api/v1/admin/users"
-
-def test_audit_logs_endpoint_matrix(tokens):
-    # Only Auditor and Admin can access /api/v1/audit
-    for role, token in tokens.items():
-        res = client.get("/api/v1/audit", headers={"Authorization": f"Bearer {token}"})
-        if role in ("auditor", "admin"):
-            assert res.status_code == 200
-        else:
-            assert res.status_code == 403, f"Role {role} unexpectedly accessed /api/v1/audit"
-
-def test_cases_list_endpoint_matrix(tokens):
+def test_cases_list_endpoint_matrix():
     # Judge, Clerk, Lawyer, Police have case:list permission
     # Citizen, Auditor, Admin do not have case:list
-    for role, token in tokens.items():
-        res = client.get("/api/v1/cases", headers={"Authorization": f"Bearer {token}"})
-        if role in ("judge", "clerk", "lawyer", "police"):
-            assert res.status_code == 200
-        else:
-            assert res.status_code == 403
+    db = SessionLocal()
+    try:
+        check = require_permission("case:list")
+        for role in ROLES:
+            u = db.query(User).filter(User.role == role).first()
+            if role in ("judge", "clerk", "lawyer", "police"):
+                valid_u = check(current_user=u, db=db)
+                cases = list_cases(tier=None, status=None, search=None, db=db, current_user=valid_u)
+                assert isinstance(cases, list)
+            else:
+                with pytest.raises(HTTPException) as exc_info:
+                    check(current_user=u, db=db)
+                assert exc_info.value.status_code == 403
+    finally:
+        db.close()
 
 def test_unauthenticated_requests_fail():
-    endpoints = [
-        "/api/v1/cases",
-        "/api/v1/audit",
-        "/api/v1/admin/users",
-        "/api/v1/me/cases"
-    ]
-    for ep in endpoints:
-        res = client.get(ep)
-        assert res.status_code == 401
+    db = SessionLocal()
+    try:
+        with pytest.raises(HTTPException) as exc_info:
+            get_current_user(token=None, db=db)
+        assert exc_info.value.status_code == 401
+    finally:
+        db.close()

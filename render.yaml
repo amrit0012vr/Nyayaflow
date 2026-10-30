@@ -25,11 +25,10 @@ services:
     runtime: static
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
     staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://nyayaflow-backend.onrender.com
     routes:
-      # Proxy all API requests directly to backend web service
-      - type: rewrite
-        source: /api/*
-        destination: https://nyayaflow-backend.onrender.com/api/*
       # Single-Page Application (SPA) routing for React Router
       - type: rewrite
         source: /*

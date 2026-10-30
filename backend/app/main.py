@@ -33,9 +33,22 @@ app = FastAPI(
 )
 
 # SEC-09: CORS configuration
+allowed_origins = list(settings.ALLOWED_ORIGINS)
+for extra in [
+    "https://nyayaflow-frontend.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
+]:
+    if extra not in allowed_origins:
+        allowed_origins.append(extra)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https:\/\/.*\.onrender\.com$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -48,7 +61,15 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self' https: data:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: https: blob:; "
+        "connect-src 'self' https: wss:; "
+        "frame-ancestors 'none';"
+    )
     return response
 
 # Mount Routers under /api/v1
@@ -89,6 +110,39 @@ def health_check():
         "llm_provider": settings.LLM_PROVIDER,
         "track": "07 — Timely Justice: Legal Backlog"
     }
+
+# Full-Stack SPA Mounting: Serve compiled React frontend if present
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
+
+if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+    from fastapi import HTTPException
+
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="frontend_assets")
+
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Do not intercept API, health, docs, or openapi routes
+        if (
+            full_path.startswith("api/")
+            or full_path.startswith("docs")
+            or full_path.startswith("redoc")
+            or full_path == "openapi.json"
+        ):
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        file_candidate = FRONTEND_DIST / full_path
+        if full_path and file_candidate.is_file():
+            return FileResponse(file_candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")
 
 if __name__ == "__main__":
     import uvicorn

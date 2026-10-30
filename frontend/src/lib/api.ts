@@ -1,6 +1,46 @@
 import { Case, TriageResponse, SummaryResponse, ScheduleSlot, AuditEntry, User, CaseStatusPublic, EligibilityResult } from '../types';
 
-const API_BASE = ((import.meta as any).env?.VITE_API_BASE_URL || '') + '/api/v1';
+/**
+ * Dynamic resolution of API Base URL:
+ * 1. Checks build-time VITE_API_BASE_URL (if provided)
+ * 2. Checks browser localStorage('NYAYAFLOW_API_URL') for manual runtime overrides
+ * 3. Checks window.location.hostname for Render static sites:
+ *    If on https://[service]-frontend.onrender.com, automatically route API requests to
+ *    https://[service]-backend.onrender.com
+ * 4. Fallback to same-origin /api/v1
+ */
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return envUrl.replace(/\/+$/, '') + '/api/v1';
+  }
+
+  if (typeof window !== 'undefined' && window.location) {
+    const custom = window.localStorage.getItem('NYAYAFLOW_API_URL');
+    if (custom && custom.trim()) {
+      return custom.replace(/\/+$/, '') + '/api/v1';
+    }
+
+    const host = window.location.hostname;
+    // Auto-detect Render deployment: e.g. nyayaflow-frontend.onrender.com -> nyayaflow-backend.onrender.com
+    if (host.endsWith('.onrender.com') && host.includes('-frontend')) {
+      const backendHost = host.replace('-frontend', '-backend');
+      return `https://${backendHost}/api/v1`;
+    }
+  }
+
+  return '/api/v1';
+}
+
+export function setCustomApiUrl(url: string | null) {
+  if (typeof window !== 'undefined') {
+    if (url) {
+      window.localStorage.setItem('NYAYAFLOW_API_URL', url);
+    } else {
+      window.localStorage.removeItem('NYAYAFLOW_API_URL');
+    }
+  }
+}
 
 // AUTH-05: In-memory token storage (NEVER in localStorage/sessionStorage)
 let accessToken: string | null = null;
@@ -20,7 +60,8 @@ export function onSessionExpired(callback: () => void) {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  const base = getApiBaseUrl();
+  const url = `${base}${endpoint}`;
   const headers = new Headers(options.headers || {});
 
   if (accessToken && !headers.has('Authorization')) {
@@ -37,7 +78,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (res.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh') && !isRefreshing) {
     isRefreshing = true;
     try {
-      const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+      const refreshRes = await fetch(`${base}/auth/refresh`, {
         method: 'POST',
         credentials: 'include'
       });

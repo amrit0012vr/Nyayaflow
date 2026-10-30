@@ -6,8 +6,6 @@ venv/
 # Dependencies
 node_modules/
 frontend/node_modules/
-dist/
-frontend/dist/
 
 # Python Cache & Build
 __pycache__/

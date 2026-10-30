@@ -123,13 +123,19 @@ def login(
     db.add(refresh_record)
     db.commit()
 
+    is_https = (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto") == "https"
+    )
+
     # Deliver refresh token via HttpOnly Secure cookie
+    # Over HTTPS (Render / production), samesite="none" & secure=True are required for cross-origin fetch
     response.set_cookie(
         key="nyayaflow_refresh",
         value=raw_refresh,
         httponly=True,
-        samesite="lax",
-        secure=request.url.scheme == "https",
+        samesite="none" if is_https else "lax",
+        secure=is_https,
         max_age=7 * 24 * 3600
     )
 
@@ -243,13 +249,18 @@ def refresh_session(
     db.add(new_refresh)
     db.commit()
 
+    is_https = (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto") == "https"
+    )
+
     # Set new cookie
     response.set_cookie(
         key="nyayaflow_refresh",
         value=new_raw_refresh,
         httponly=True,
-        samesite="lax",
-        secure=request.url.scheme == "https",
+        samesite="none" if is_https else "lax",
+        secure=is_https,
         max_age=7 * 24 * 3600
     )
 
@@ -299,7 +310,15 @@ def logout(
             token_record.revoked = True
             db.commit()
 
-    response.delete_cookie("nyayaflow_refresh")
+    is_https = (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto") == "https"
+    )
+    response.delete_cookie(
+        "nyayaflow_refresh",
+        samesite="none" if is_https else "lax",
+        secure=is_https
+    )
 
     if current_user:
         log_audit_action(

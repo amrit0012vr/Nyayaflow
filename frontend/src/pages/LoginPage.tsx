@@ -5,6 +5,7 @@ import {
   Lock, Eye, EyeOff, ArrowLeft, AlertCircle, Sparkles, Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl, setCustomApiUrl } from '../lib/api';
 
 interface PersonaCard {
   id: string;
@@ -149,6 +150,52 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleConfigureApi = () => {
+    const current = window.localStorage?.getItem('NYAYAFLOW_API_URL') || getApiBaseUrl().replace(/\/api\/v1\/?$/, '');
+    const custom = window.prompt(
+      'Configure NyayaFlow Backend API Base URL:\n(e.g., https://nyayaflow-backend.onrender.com)',
+      current
+    );
+    if (custom !== null) {
+      setCustomApiUrl(custom.trim() || null);
+      window.location.reload();
+    }
+  };
+
+  const renderErrorAlert = () => {
+    if (!error) return null;
+    const isConnectionError = error.includes('404') || error.toLowerCase().includes('failed to fetch') || error.toLowerCase().includes('network');
+    return (
+      <div
+        role="alert"
+        aria-live="polite"
+        className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 mb-4 max-w-md mx-auto w-full"
+      >
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <span className="font-medium">{error}</span>
+        </div>
+        {isConnectionError && (
+          <div className="mt-2.5 pt-2 border-t border-rose-500/20 text-[11px] text-rose-200/80 space-y-1">
+            <p>
+              <strong>Target API:</strong> <code className="bg-slate-900/80 px-1 py-0.5 rounded text-amber-300">{getApiBaseUrl()}</code>
+            </p>
+            <p>
+              If your backend is waking up from sleep on Render&apos;s free tier, it takes ~30–50s on the first request.
+            </p>
+            <button
+              type="button"
+              onClick={handleConfigureApi}
+              className="text-amber-400 underline hover:text-amber-300 font-semibold mt-1 inline-block"
+            >
+              Configure Custom API URL
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between text-slate-100">
       {/* Top Bar with Language Selector */}
@@ -189,6 +236,8 @@ export const LoginPage: React.FC = () => {
                 Please select your judicial role persona to access authorized dockets, case briefs, and statutory workflows.
               </p>
             </div>
+
+            {renderErrorAlert()}
 
             {/* Persona Cards Grid (AUTH-02) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -277,16 +326,7 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            {error && (
-              <div
-                role="alert"
-                aria-live="polite"
-                className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 flex items-start gap-2 mb-4"
-              >
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-                <span>{error}</span>
-              </div>
-            )}
+            {renderErrorAlert()}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -339,9 +379,19 @@ export const LoginPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-900/40 py-4 px-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-900 bg-slate-900/40 py-3 px-6 text-center text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-1.5 text-[11px]">
+          <span>API Base: <code className="text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">{getApiBaseUrl()}</code></span>
+          <button
+            type="button"
+            onClick={handleConfigureApi}
+            className="text-amber-400/90 hover:text-amber-300 underline font-medium"
+          >
+            Change API URL
+          </button>
+        </div>
         <p>NyayaFlow Judicial Platform · Open source (Apache-2.0)</p>
-        <p className="mt-1 text-[11px] text-slate-600">
+        <p className="mt-0.5 text-[11px] text-slate-600">
           Notice: AI outputs are advisory; judicial decisions and orders remain with authorised court officials.
         </p>
       </footer>
