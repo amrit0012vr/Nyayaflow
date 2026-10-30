@@ -4,31 +4,22 @@
 [![Python](https://img.shields.io/badge/Python-3.12-emerald.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-1.0-teal.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev)
-[![Track](https://img.shields.io/badge/Hackathon-Bharat%20Agentic--AI%20Track%2007-amber.svg)](PROJECT.md)
 [![Tests](https://img.shields.io/badge/Tests-55%20Passed-brightgreen.svg)](backend/tests)
 
 **NyayaFlow** is an open-source, privacy-first judicial decision-support platform designed for the Indian subordinate judiciary. It ingests complex legal filings and charge sheets, then automatically **triages matters by statutory urgency, generates 1-page citation-verified bench briefs, mathematically schedules hearings using Google OR-Tools CP-SAT, and guides citizens to 100% Free Legal Aid under Section 12 of the Legal Services Authorities Act, 1987**.
 
 All operations are secured with **HKDF-SHA256 envelope encryption, DPDP Act (2023) PII tokenization, strict tenant data scoping, and an immutable, SHA-256 hash-chained audit ledger**.
 
-Built for the **Bharat Agentic-AI Hackathon 2026 — *Code for a Billion*** (Track 07: *Timely Justice: Legal Backlog*).
-
-> 📘 **For Hackathon Evaluators & Agents:**
-> - Complete Architecture & Code Blueprint: [**AI_AGENT_CONTEXT.md**](AI_AGENT_CONTEXT.md)
-> - Official 3-Minute Presentation Demo Script: [**docs/demo-script.md**](docs/demo-script.md)
-> - Architecture Decision Records (ADRs): [**docs/decisions.md**](docs/decisions.md)
-> - Full Submission Compliance Checklist: [**docs/submission-checklist.md**](docs/submission-checklist.md)
-
 ---
 
-## 🏛️ Track 07 Problem Alignment & Official Statistics
+## 🏛️ Problem Overview & Official Judicial Statistics
 
 According to public data from the **National Judicial Data Grid (NJDG)** and **National Crime Records Bureau (NCRB - Prison Statistics India)**:
 - **50.4+ Million Pending Cases** in Indian courts (over 85% in District and Subordinate Courts).
 - **434,000+ Undertrial Prisoners** languishing in prisons (representing **75.8% of the total prison population**).
 - **60% of Staff Working Hours** consumed by clerical docketing, manual limitation checks, and paper-based scheduling.
 
-| Hackathon Track Requirement | NyayaFlow Module | Ground Truth & Benchmark Result |
+| Operational Challenge | NyayaFlow Module | Ground Truth & Benchmark Result |
 |---|---|---|
 | **Automated Case Triage** | `TriageAgent` (`triage_config.yaml`) | **0.998 Spearman rank correlation** with expert judicial triage order. Prioritizes undertrial custody duration (>50% max sentence under 436A CrPC / 479 BNSS) and vulnerable parties. |
 | **Document Summarisation** | `SummarisationAgent` + `CitationVerifier` | **100.0% Pass on Negative Test Suite**; $\le 250$-word Bench Briefs with clickable source excerpts; zero hallucination tolerance. |
@@ -108,7 +99,7 @@ flowchart TD
 ## ⚡ Quickstart
 
 ### Prerequisites
-- **Python 3.12** (Mandated per OPS-01; ensure Python 3.12 is active)
+- **Python 3.12**
 - **Node.js 18+** & npm
 - **Docker & Docker Compose** (Optional for container deployment)
 
@@ -119,7 +110,7 @@ flowchart TD
 #### 1. Backend Service
 ```bash
 # Clone the repository
-git clone https://github.com/nyayaflow/nyayaflow.git
+git clone https://github.com/your-username/nyayaflow.git
 cd nyayaflow
 
 # Activate your Python 3.12 virtual environment
@@ -151,7 +142,7 @@ uvicorn app.main:app --port 8000 --reload
 # In a separate terminal, navigate to the frontend directory:
 cd frontend
 
-# Install dependencies (use --legacy-peer-deps if npm prompts for Vite 5)
+# Install dependencies
 npm install --legacy-peer-deps
 
 # Start Vite development server on port 3000
@@ -173,7 +164,7 @@ docker compose up -d --build
 
 ---
 
-## 🔐 Demo Accounts (For Evaluators & Reviewers)
+## 🔐 Demo Accounts
 
 When running in **Demo Mode** (`DEMO_MODE=true`), all seeded accounts share the default demo password:
 ```
@@ -235,11 +226,9 @@ npm run build
 
 - **Decision-Support Only:** NyayaFlow does not make final legal adjudications or determine case outcomes. It prepares briefs, verifies citations, ranks queues, and suggests conflict-free schedules for human review.
 - **Offline Mode by Default:** The platform is fully operational without third-party LLM dependencies (`LLM_PROVIDER=none`). Rule-based deterministic extraction ensures that courts with low connectivity or strict data sovereignty regulations can run locally.
-- **Not Certified for Production Adjudication:** This software is an open-source prototype submitted for hackathon evaluation. Production deployment requires formal judicial security audit and infrastructure integration.
+- **Not Certified for Production Adjudication:** This software is an open-source prototype submitted for evaluation. Production deployment requires formal judicial security audit and infrastructure integration.
 
 ---
 
 ## 📜 Licence
 Licensed under the **Apache License, Version 2.0**. See [LICENSE](LICENSE) for details.
-#   N y a y a f l o w  
- 
