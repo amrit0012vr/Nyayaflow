@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from app.models.database import get_db, Case, Hearing, TriageResult
+from app.models.database import get_db, Case, Hearing, TriageResult, User
 from app.schemas.schemas import ScheduleResponse, ScheduleAcceptRequest
-from app.core.rbac import get_current_user_payload
+from app.core.rbac import require_permission
+from app.core.scope import get_scoped_case_or_404, visible_cases
 from app.agents.scheduling import SchedulingAgent
 from app.services.audit import log_audit_action
 
@@ -12,11 +13,12 @@ router = APIRouter(prefix="/schedule", tags=["Court Scheduling"])
 def suggest_schedule(
     case_id: str = Body(..., embed=True),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("schedule:suggest"))
 ):
-    case = db.query(Case).filter(Case.id == case_id).first()
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
+    """
+    SCH-01 / SCH-02: Generates conflict-free scheduling slots using CP-SAT constraint solver.
+    """
+    case = get_scoped_case_or_404(case_id, current_user, db)
 
     triage = db.query(TriageResult).filter(TriageResult.case_id == case.id).first()
     priority_score = triage.score if triage else 50
@@ -27,18 +29,18 @@ def suggest_schedule(
     return ScheduleResponse(
         case_id=case.id,
         suggestions=suggestions_data["suggestions"],
-        conflicts=suggestions_data["conflicts"]
+        conflicts=suggestions_data["conflicts"],
+        solver=suggestions_data.get("solver", "cp-sat")
     )
 
 @router.post("/accept")
 def accept_schedule(
     payload: ScheduleAcceptRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("schedule:accept"))
 ):
-    case = db.query(Case).filter(Case.id == payload.case_id).first()
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
+    """SCH-04: Confirms hearing slot and logs audited scheduling event."""
+    case = get_scoped_case_or_404(payload.case_id, current_user, db)
 
     hearing = Hearing(
         case_id=case.id,
@@ -56,8 +58,8 @@ def accept_schedule(
     # Log schedule confirmation in audit chain
     log_audit_action(
         db=db,
-        actor_id=current_user.get("user_id", "clerk"),
-        actor_name=current_user.get("name", "Court Clerk"),
+        actor_id=current_user.id,
+        actor_name=current_user.name,
         action="schedule_hearing",
         object_type="hearing",
         object_id=hearing.id,
@@ -79,12 +81,18 @@ def accept_schedule(
 @router.get("/hearings")
 def list_hearings(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("hearing:read"))
 ):
+    """Returns hearings scoped to cases visible to caller (Judge, Clerk, or Advocate)."""
+    scoped_cases = visible_cases(db.query(Case), current_user, db).all()
+    case_ids = {c.id for c in scoped_cases}
+
     hearings = db.query(Hearing).order_by(Hearing.slot_start.asc()).all()
     results = []
     for h in hearings:
-        case = db.query(Case).filter(Case.id == h.case_id).first()
+        if current_user.role != "admin" and h.case_id not in case_ids:
+            continue
+        case = next((c for c in scoped_cases if c.id == h.case_id), None)
         results.append({
             "id": h.id,
             "case_id": h.case_id,
@@ -97,4 +105,3 @@ def list_hearings(
             "status": h.status
         })
     return results
-

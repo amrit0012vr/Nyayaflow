@@ -1,0 +1,6 @@
+tester_id,role,task,case_id,manual_minutes,tool_minutes,omissions_found,usefulness_1_to_5,trust_1_to_5,notes,date
+# Template for pilot data collection (PIL-01, PIL-03).
+# Record observations during controlled 30-minute pilot sessions with advocates and law students.
+# tester_id (e.g. ADV-01), role (Advocate/Clerk/Judge), task (DossierReview/BailScrutiny/Scheduling),
+# case_id, manual_minutes, tool_minutes, omissions_found (int), usefulness_1_to_5, trust_1_to_5, notes, date (YYYY-MM-DD)
+

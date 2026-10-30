@@ -1,0 +1,16 @@
+{
+  "status": "not_collected",
+  "n_testers": 0,
+  "n_tasks": 0,
+  "method_description": "Field pilot observation data not yet collected. Run 30-minute pilot sessions following docs/pilot-protocol.md.",
+  "date_range": "N/A",
+  "as_of_date": "2026-10-29",
+  "metrics": {
+    "avg_manual_minutes": null,
+    "avg_tool_minutes": null,
+    "time_saved_percent": null,
+    "avg_omissions_found": null,
+    "avg_usefulness": null,
+    "avg_trust": null
+  }
+}

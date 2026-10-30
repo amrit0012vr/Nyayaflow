@@ -4,14 +4,15 @@ from app.models.database import Chunk
 
 class CitationVerifier:
     """
-    Verifies that claims made in summaries or triage factors link to real,
-    existing text in the case document chunks.
-    Prevents hallucination and ensures judicial explainability.
+    SUM-02 / SUM-03:
+    Verifies that claims and citations link to verified text in document chunks.
+    Rejects fabricated excerpts, wrong pages, or unsupported assertions.
     """
     @staticmethod
     def verify_citations(db: Session, _case_id: str, citations: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Validates a list of citations: [{'document_id': '...', 'page': 1, 'span': [100, 250], 'excerpt': '...'}]
+        Validates citations: [{'document_id': '...', 'page': 1, 'span': [100, 250], 'excerpt': '...'}]
+        Negative test: Fabricated excerpts or mismatched pages are strictly rejected.
         """
         if not citations:
             return {"verified": True, "valid_count": 0, "invalid_count": 0, "details": []}
@@ -23,7 +24,7 @@ class CitationVerifier:
         for cit in citations:
             doc_id = cit.get("document_id")
             page = cit.get("page", 1)
-            excerpt = cit.get("excerpt", "")
+            excerpt = cit.get("excerpt", "").strip()
 
             # Query chunk
             chunk = db.query(Chunk).filter(
@@ -40,30 +41,35 @@ class CitationVerifier:
                 })
                 continue
 
-            # If excerpt provided, check substring or key token match in redacted text
+            # Strict excerpt validation
             if excerpt:
-                chunk_text = chunk.text_redacted.lower()
-                words = [w.lower() for w in excerpt.split() if len(w) >= 3]
-                matched = any(w in chunk_text for w in words) if words else True
-                if not matched:
-                    # Check if document has general text related to case
-                    if len(chunk_text.strip()) > 15:
-                        matched = True
-                    else:
-                        invalid_count += 1
-                        details.append({
-                            "citation": cit,
-                            "status": "unverified_claim",
-                            "reason": "Cited excerpt not found in document chunk text"
-                        })
-                        continue
+                chunk_lower = chunk.text_redacted.lower()
+                excerpt_lower = excerpt.lower()
+                
+                # Check exact substring or substantive token overlap
+                if excerpt_lower in chunk_lower:
+                    is_match = True
+                else:
+                    words = [w for w in excerpt_lower.split() if len(w) >= 3]
+                    matching_words = [w for w in words if w in chunk_lower]
+                    overlap_ratio = len(matching_words) / len(words) if words else 0
+                    is_match = overlap_ratio >= 0.7
+
+                if not is_match:
+                    invalid_count += 1
+                    details.append({
+                        "citation": cit,
+                        "status": "unverified_claim",
+                        "reason": f"Cited excerpt '{excerpt[:40]}...' not substantiated in page {page} chunk text"
+                    })
+                    continue
 
             valid_count += 1
             details.append({"citation": cit, "status": "verified"})
 
-        is_verified = (invalid_count == 0) or (valid_count / max(1, (valid_count + invalid_count)) >= 0.8)
+        all_ok = (invalid_count == 0)
         return {
-            "verified": is_verified,
+            "verified": all_ok,
             "valid_count": valid_count,
             "invalid_count": invalid_count,
             "details": details

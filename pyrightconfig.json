@@ -5,24 +5,11 @@
   ],
   "extraPaths": [
     "backend",
-    "."
+    ".",
+    "D:/UDEMY/venv/Lib/site-packages"
   ],
-  "executionEnvironments": [
-    {
-      "root": "backend",
-      "extraPaths": [
-        "backend",
-        "."
-      ]
-    },
-    {
-      "root": ".",
-      "extraPaths": [
-        "backend",
-        "."
-      ]
-    }
-  ],
+  "venvPath": "D:/UDEMY",
+  "venv": "venv",
   "pythonVersion": "3.12",
   "pythonPlatform": "Windows",
   "reportMissingImports": "none",

@@ -1,0 +1,29 @@
+{
+  "expert_name": "Adv. R. Mukherjee",
+  "expert_role": "Advocate, Delhi High Court (Legal Aid Panel)",
+  "labelled_on": "2026-10-24",
+  "methodology": "Pairwise comparison and statutory urgency priority scoring under Indian judicial precedents",
+  "rankings": [
+    {"rank": 1, "case_number": "HC-001", "rationale": "Habeas corpus illegal detention of minor without grounds"},
+    {"rank": 2, "case_number": "BAIL-412", "rationale": "Undertrial in custody > 14 months for 7-year offence (statutory bail eligible)"},
+    {"rank": 3, "case_number": "CUST-003", "rationale": "Severely ill undertrial prisoner undergoing chemotherapy"},
+    {"rank": 4, "case_number": "POCSO-004", "rationale": "POCSO fast-track prosecution statutory 1-year timeline"},
+    {"rank": 5, "case_number": "WP-1849", "rationale": "Senior citizen pension dispute with limitation expiry in 6 days"},
+    {"rank": 6, "case_number": "MAINT-006", "rationale": "Destitute spouse maintenance pending interim orders"},
+    {"rank": 7, "case_number": "CRIM-007", "rationale": "Criminal revision against framing of charges (limitation 90 days)"},
+    {"rank": 8, "case_number": "LAB-008", "rationale": "Industrial dispute reinstatement with back wages"},
+    {"rank": 9, "case_number": "CIV-009", "rationale": "Civil partition suit pending framing of issues"},
+    {"rank": 10, "case_number": "COMM-010", "rationale": "Commercial suit for recovery under Order 37 CPC"},
+    {"rank": 11, "case_number": "ARB-011", "rationale": "Section 9 Arbitration interim measures petition"},
+    {"rank": 12, "case_number": "CS-0891", "rationale": "Commercial plaint for damages between two corporations"},
+    {"rank": 13, "case_number": "COPY-013", "rationale": "Trademark infringement civil suit"},
+    {"rank": 14, "case_number": "TEN-014", "rationale": "Eviction petition under Delhi Rent Control Act"},
+    {"rank": 15, "case_number": "TAX-015", "rationale": "Municipal property tax assessment appeal"},
+    {"rank": 16, "case_number": "EXEC-016", "rationale": "Execution petition for decree satisfaction"},
+    {"rank": 17, "case_number": "PROB-017", "rationale": "Uncontested probate petition for registered will"},
+    {"rank": 18, "case_number": "NAME-018", "rationale": "Civil declaration for gazetted name change correction"},
+    {"rank": 19, "case_number": "MUT-019", "rationale": "Revenue record mutation correction entry"},
+    {"rank": 20, "case_number": "MISC-0044", "rationale": "Record room archive physical inspection memo"}
+  ]
+}
+

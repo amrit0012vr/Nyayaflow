@@ -1,12 +1,14 @@
 {
-    "python.defaultInterpreterPath": "D:\\UDEMY\\venv\\python.exe",
+    "python.defaultInterpreterPath": "D:\\UDEMY\\venv\\Scripts\\python.exe",
     "python.analysis.extraPaths": [
         "${workspaceFolder}/backend",
-        "${workspaceFolder}"
+        "${workspaceFolder}",
+        "D:/UDEMY/venv/Lib/site-packages"
     ],
     "python.autoComplete.extraPaths": [
         "${workspaceFolder}/backend",
-        "${workspaceFolder}"
+        "${workspaceFolder}",
+        "D:/UDEMY/venv/Lib/site-packages"
     ],
     "python.analysis.typeCheckingMode": "off",
     "python.analysis.diagnosticSeverityOverrides": {
@@ -17,6 +19,7 @@
         "reportGeneralTypeIssues": "none",
         "reportOptionalMemberAccess": "none"
     },
-    "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "files.associations": {
+        "*.py": "python"
+    }
 }

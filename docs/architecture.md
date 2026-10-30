@@ -1,4 +1,4 @@
-# NyayaFlow Architecture Documentation
+# NyayaFlow — System Architecture & Multi-Agent Specifications
 
 ## 1. High-Level System Architecture
 
@@ -6,60 +6,83 @@ NyayaFlow is built on two interdependent layers designed for strict judicial int
 
 ```mermaid
 flowchart TD
-    subgraph Clients["Presentation Layer (Next.js / React)"]
-        J[Judge / Bench]
-        C[Court Registry Clerk]
-        L[Advocate]
-        P[Police / Investigating Officer]
-        Z[Citizen / Litigant]
-        A[Auditor / Vigilance]
+    subgraph Clients["Presentation Layer (React 18 + React Router 7 + Tailwind)"]
+        J["Judge / Bench (/cases)"]
+        C["Court Registry Clerk (/intake)"]
+        L["Advocate (/my-cases)"]
+        P["Police / IO (/evidence)"]
+        Z["Citizen Portal (/citizen)"]
+        A["Auditor Ledger (/audit)"]
+        ADM["Court Admin (/admin/users)"]
     end
 
-    subgraph Gateway["API Gateway & Core Security"]
+    subgraph Security["API Gateway & Security Middleware (FastAPI)"]
         GW[FastAPI REST Gateway]
-        AUTH[JWT / RBAC Enforcement]
-        AUDIT[Tamper-Evident Hash Chain Engine]
-    end
-
-    subgraph Storage["Secure Storage Vault"]
-        ENC[AES-256-GCM Encryption Core]
-        VAULT[(Encrypted Object Vault)]
-        DB[(Relational DB + Vector Embeddings)]
+        AUTH[In-Memory JWT & HttpOnly Refresh Rotation]
+        RBAC[RBAC Matrix with Audited 403 on access_denied]
+        SCOPE[Tenant Scoping visible_cases]
+        LOCK[_audit_lock Mutex Serializer]
     end
 
     subgraph MultiAgent["Multi-Agent Orchestrator"]
-        ORC[Orchestrator Agent]
-        INT[Intake Agent]
-        TRI[Triage Agent]
-        SUM[Summarisation Agent]
-        SCH[Constraint Scheduling Agent]
-        LEG[Legal Aid Agent]
+        TRI["TriageAgent (Sentence Fraction Heuristic)"]
+        SUM["SummarisationAgent (1-Page Bench Briefs)"]
+        SCH["SchedulingAgent (Google OR-Tools CP-SAT)"]
+        LEG["LegalAidAgent (Section 12 a-h Engine)"]
     end
 
     subgraph Verification["Integrity & Guardrails"]
-        CV[Citation Verifier]
-        RED[PII Masking & Encrypted Token Map]
-        CH_VER[Hash Chain Verifier]
+        CV["CitationVerifier (Strict Negative Excerpt Check)"]
+        RED["RedactionService (12 PII Categories + POCSO)"]
+        CH_VER["Audit Hash Chain Verifier"]
+        LLM_FALLBACK["Pluggable LLM with XML Boundary & Offline Mode"]
+    end
+
+    subgraph Storage["Encrypted Storage & Ledger"]
+        ENC["HKDF-SHA256 & AES-256-GCM Envelope Encryption"]
+        VAULT[("Encrypted File Storage")]
+        DB[("Database (SQLite / PostgreSQL)")]
+        ANCHOR["Audit Head Anchors (docs/audit-anchors.md)"]
     end
 
     Clients --> GW
     GW --> AUTH --> DB
-    GW --> AUDIT --> DB
+    GW --> RBAC --> SCOPE --> MultiAgent
+    GW --> LOCK --> DB
     GW --> ENC --> VAULT
-    GW --> ORC
-    ORC --> RED --> INT
-    ORC --> TRI
-    ORC --> SUM --> CV
-    ORC --> SCH
-    ORC --> LEG
+    MultiAgent --> RED
+    MultiAgent --> CV
+    MultiAgent --> LLM_FALLBACK
+    LOCK --> ANCHOR
 ```
+
+---
 
 ## 2. Multi-Agent Pipeline Specifications
 
-1. **Intake Agent:** Scans case documents, extracts legal acts & sections (BNS, IPC, CrPC, BNSS), identifies parties, and classifies document types.
-2. **Triage Agent:** Transparent rule scoring (0-100) prioritizing under-trial custody duration, statutory limitation deadlines, case age, and protected vulnerable parties.
-3. **Summarisation Agent:** Generates 1-page bench briefs (<= 250 words), chronological timelines, and key issues with page/span source citations.
-4. **Citation Verifier:** Validates every generated sentence against stored chunk excerpts to prevent hallucinations.
-5. **Scheduling Agent:** CP-SAT constraint optimization allocating hearing slots while avoiding holidays and grouping related cases.
-6. **Legal Aid Agent:** Multilingual citizen interface providing NALSA/DLSA guidance and automated Section 12 eligibility checks.
+1. **Intake Agent (`IntakeAgent`):**
+   - Validates incoming filings for size ($\le 25\text{MB}$), MIME type, and magic bytes.
+   - Masks 12 statutory PII categories into reversible encrypted tokens.
+   - Classifies document types and extracts statutory offenses (BNS, IPC, CrPC, BNSS, NDPS, POCSO).
 
+2. **Triage Agent (`TriageAgent`):**
+   - Implements configurable weights from `backend/app/agents/triage_config.yaml`.
+   - Computes transparent urgency scores ($0\text{--}100$) prioritizing under-trial custody duration (>50% max sentence under Section 436A CrPC / 479 BNSS: +35 points), limitation deadlines (<7 days: +25 points), and vulnerable parties (+20 points).
+   - Classifies matters into 4 triage tiers: *Critical*, *High*, *Medium*, and *Standard*.
+
+3. **Summarisation Agent (`SummarisationAgent`):**
+   - Generates concise 1-page Bench Briefs ($\le 250$ words) for judges, chronological procedural timelines, and framed legal issues.
+   - Enforces human-in-the-loop review state (`pending_review`, `approved`, `rejected`) before summaries are approved for cause list publication.
+
+4. **Citation Verifier (`CitationVerifier`):**
+   - Deterministic verification engine cross-checking quoted excerpts and claims against ground-truth chunk character spans.
+   - Unsubstantiated claims, altered dates, or mismatched page numbers are 100% rejected, withholding unverified briefs from the bench.
+
+5. **Scheduling Agent (`SchedulingAgent`):**
+   - Formulates hearing calendar optimization as a Google OR-Tools CP-SAT constraint satisfaction problem.
+   - Hard constraints: zero double-booking of judges or courtrooms, daily courtroom capacity limits, exclusion of Sundays and 14 gazetted court holidays (`data/court_holidays.json`).
+   - Objective: Maximizes priority-score weighted earliest slot placement. Includes deterministic greedy fallback.
+
+6. **Legal Aid Agent (`LegalAidAgent`):**
+   - Multilingual conversational assistant in English, हिन्दी (Hindi), and ଓଡ଼ିଆ (Odia).
+   - Automated eligibility calculator covering Section 12 (clauses a–h) of the *Legal Services Authorities Act, 1987*, evaluating state-specific income thresholds and statutory exempt categories.

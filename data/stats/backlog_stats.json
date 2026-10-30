@@ -1,0 +1,50 @@
+{
+  "last_updated": "2026-10-25",
+  "statistics": [
+    {
+      "id": "njdg_total_pending",
+      "label": "Total Cases Pending in Indian Courts",
+      "value": "5.1",
+      "unit": "Crore (51 Million)",
+      "source_name": "National Judicial Data Grid (NJDG)",
+      "source_url": "https://njdg.ecourts.gov.in/",
+      "as_of_date": "2026-09-30",
+      "verified": true,
+      "context": "Across District and Taluka Courts, High Courts, and Supreme Court of India."
+    },
+    {
+      "id": "njdg_pending_over_5_years",
+      "label": "Cases Pending for More Than 5 Years",
+      "value": "1.34",
+      "unit": "Crore (13.4 Million)",
+      "source_name": "National Judicial Data Grid (NJDG)",
+      "source_url": "https://njdg.ecourts.gov.in/",
+      "as_of_date": "2026-09-30",
+      "verified": true,
+      "context": "Chronic backlog severely impacting civil recovery and commercial disputes."
+    },
+    {
+      "id": "ncrb_undertrial_population_share",
+      "label": "Under-Trial Share of Total Prison Inmates",
+      "value": "75.8",
+      "unit": "%",
+      "source_name": "NCRB Prison Statistics India (PSI Report)",
+      "source_url": "https://ncrb.gov.in/prison-statistics-india",
+      "as_of_date": "2025-12-31",
+      "verified": true,
+      "context": "Under-trial prisoners incarcerated pending trial without conviction, engaging CrPC 436A / BNSS 479."
+    },
+    {
+      "id": "nalsa_annual_legal_aid_beneficiaries",
+      "label": "Beneficiaries Provided Free Legal Services Annually",
+      "value": "14.2",
+      "unit": "Lakh (1.42 Million)",
+      "source_name": "National Legal Services Authority (NALSA) Annual Report",
+      "source_url": "https://nalsa.gov.in/statistics",
+      "as_of_date": "2025-12-31",
+      "verified": true,
+      "context": "Free legal aid representation provided under Section 12 across 680+ DLSAs."
+    }
+  ]
+}
+

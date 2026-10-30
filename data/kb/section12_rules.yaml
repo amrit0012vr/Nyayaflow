@@ -1,0 +1,89 @@
+# Knowledge Base: Legal Services Authorities Act, 1987 (Section 12)
+# Verified against official NALSA repository: https://nalsa.gov.in/acts-rules/the-legal-services-authorities-act-1987
+act_name: "Legal Services Authorities Act, 1987"
+section: 12
+verified_on: "2026-10-25"
+source_url: "https://nalsa.gov.in/acts-rules/the-legal-services-authorities-act-1987"
+verifier_note: "Verified against official NALSA published criteria. All clauses (a) through (h) represented."
+
+categories:
+  - id: "12_a"
+    clause: "(a)"
+    title: "Scheduled Caste or Scheduled Tribe"
+    description: "A member of a Scheduled Caste or Scheduled Tribe"
+    statutory_reference: "Section 12(a)"
+    income_exempt: true
+  - id: "12_b"
+    clause: "(b)"
+    title: "Victim of Trafficking or Begar"
+    description: "A victim of trafficking in human beings or begar as referred to in Article 23 of the Constitution"
+    statutory_reference: "Section 12(b)"
+    income_exempt: true
+  - id: "12_c"
+    clause: "(c)"
+    title: "Woman or Child"
+    description: "A woman or a child"
+    statutory_reference: "Section 12(c)"
+    income_exempt: true
+  - id: "12_d"
+    clause: "(d)"
+    title: "Person with Disability or Mental Illness"
+    description: "A person with disability as defined in clause (i) of Section 2 of the Persons With Disabilities Act, 1995 (or RPwD Act, 2016) or a person with mental illness"
+    statutory_reference: "Section 12(d)"
+    income_exempt: true
+  - id: "12_e"
+    clause: "(e)"
+    title: "Victim of Disaster or Ethnic Violence"
+    description: "A person under circumstances of undeserved want such as being a victim of a mass disaster, ethnic violence, caste atrocity, flood, drought, earthquake or industrial disaster"
+    statutory_reference: "Section 12(e)"
+    income_exempt: true
+  - id: "12_f"
+    clause: "(f)"
+    title: "Industrial Workman"
+    description: "An industrial workman under Section 2(s) of Industrial Disputes Act, 1947"
+    statutory_reference: "Section 12(f)"
+    income_exempt: true
+  - id: "12_g"
+    clause: "(g)"
+    title: "Person in Custody"
+    description: "In custody, including custody in a protective home under Immoral Traffic (Prevention) Act, or juvenile home, or psychiatric hospital"
+    statutory_reference: "Section 12(g)"
+    income_exempt: true
+  - id: "12_h"
+    clause: "(h)"
+    title: "Income Ceiling Criteria"
+    description: "In receipt of annual income less than the amount prescribed by the State Government, or by the Central Government if before the Supreme Court"
+    statutory_reference: "Section 12(h)"
+    income_exempt: false
+
+state_income_limits:
+  Delhi:
+    district_court: 300000
+    high_court: 300000
+    needs_verification: false
+    source: "Delhi State Legal Services Authority Rules"
+  Maharashtra:
+    district_court: 300000
+    high_court: 300000
+    needs_verification: false
+  Uttar Pradesh:
+    district_court: 200000
+    high_court: 200000
+    needs_verification: false
+  Odisha:
+    district_court: 300000
+    high_court: 300000
+    needs_verification: false
+  West Bengal:
+    district_court: 150000
+    high_court: 150000
+    needs_verification: false
+  Supreme Court:
+    limit: 500000
+    needs_verification: false
+    source: "Supreme Court Legal Services Committee Rules"
+  default:
+    limit: 300000
+    needs_verification: true
+    note: "Limits vary by State — confirm with your DLSA"
+

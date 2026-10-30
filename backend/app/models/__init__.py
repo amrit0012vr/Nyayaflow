@@ -12,3 +12,4 @@ __all__ = [
     "ScheduleSuggestion", "AgentRun", "AuditLog", "ChatSession",
     "ChatMessage", "KnowledgeBaseDoc", "init_db", "SessionLocal", "get_db"
 ]
+

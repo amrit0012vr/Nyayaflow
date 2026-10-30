@@ -1,0 +1,30 @@
+# NyayaFlow Urgency Triage Configuration (TRI-01)
+# Fully explainable 6-factor weighting model on 0-100 scale
+
+tier_thresholds:
+  critical: 75
+  high: 50
+  normal: 25
+  low: 0
+
+weights:
+  custody_max: 30
+  deadline_max: 20
+  case_age_max: 15
+  vulnerable_party_max: 15
+  matter_nature_max: 15
+  stage_delay_max: 5
+
+custody_fraction_scoring:
+  # Proportional incarceration heuristic (TRI-02)
+  half_sentence_points: 30
+  third_sentence_points: 25
+  quarter_sentence_points: 20
+  default_baseline: 15
+
+excluded_attributes:
+  - religion
+  - caste
+  - gender
+  - political_affiliation
+

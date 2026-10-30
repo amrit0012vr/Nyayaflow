@@ -42,7 +42,10 @@ jobs:
           cache-dependency-path: frontend/package.json
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
+      - name: Run Frontend Vitest Suite
+        working-directory: ./frontend
+        run: npm test
       - name: Build Frontend Production Artifacts
         working-directory: ./frontend
         run: npm run build

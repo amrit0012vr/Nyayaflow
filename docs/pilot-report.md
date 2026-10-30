@@ -1,20 +1,13 @@
-# Proven Impact Report — Legal Practitioner Pilot
+# NyayaFlow — Pilot Study & Field Evaluation Report
 
-## 1. Pilot Methodology
+> **Status:** `Not Collected` (Truthful reporting per Hackathon Requirement PIL-02 & PIL-03)
+> **As of Date:** 2026-10-29
 
-A small, rigorous pilot was conducted with 3 independent legal testers (an advocate from the Delhi Bar Association, a legal clinic volunteer, and a retired court clerk) across criminal bail, senior citizen writ, and commercial matters.
+## 1. Summary of Field Observations
+No empirical field trial data has been recorded in `data/pilot/pilot_data.csv` yet.
 
-## 2. Quantitative Results
-
-| Evaluation Metric | Manual Benchmark | With NyayaFlow | Measured Impact |
-|---|---|---|---|
-| Average Case Brief Preparation Time | 4.5 Hours (270 mins) | **12 Minutes** | **95.5% Time Saved** |
-| Identification of Custody & Limitation Deadlines | 15–20 mins searching bulky files | **Instant (< 2 seconds)** | **Immediate Flagging** |
-| Fact-Checking Citation Accuracy | High cognitive load | **100% Clickable Spans** | **Zero Hallucination** |
-| Scheduling Adjournment Risk | ~35% hearings adjourned | **Minimized** | **Grouped & Holiday-Checked** |
-
-## 3. Qualitative Testimonial
-
-> *"In busy trial courts, urgent undertrial bail pleas are frequently delayed because case files are massive and unstructured. NyayaFlow’s 1-page briefs and transparent urgency scores enable the bench to instantly identify undertrials who have been detained for prolonged periods without trial completion."*
-> — Advocate Meera Sen, Delhi Bar Association Pilot Tester
-
+To conduct a controlled 30-minute user study:
+1. Follow protocol outlined in [`docs/pilot-protocol.md`](./pilot-protocol.md).
+2. Engage advocate or legal intern participants using synthetic court records only.
+3. Record task times (manual vs tool-assisted) in `data/pilot/pilot_data.csv`.
+4. Re-run `python scripts/build_pilot_report.py`.

@@ -1,26 +1,33 @@
+# Virtual Environments
+.conda/
+.venv/
+venv/
+
 # Dependencies
 node_modules/
 frontend/node_modules/
 dist/
 frontend/dist/
 
-# Python Cache
+# Python Cache & Build
 __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
 *.egg-info/
 
-# Databases & local vaults
+# Databases & local vaults (SEC-01)
 *.db
 *.db-journal
-storage/*.enc
+*.sqlite
+storage/
 
-# Environment variables
+# Environment Variables & Secrets (SEC-01)
 .env
-.env.local
+.env.*
+!.env.example
 
-# OS files
+# OS & Editor
 .DS_Store
 Thumbs.db
-
+*.lock

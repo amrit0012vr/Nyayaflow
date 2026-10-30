@@ -23,9 +23,30 @@ class User(Base):
     password_hash = Column(String(256), nullable=False)
     role = Column(String(32), nullable=False) # judge, clerk, lawyer, police, citizen, admin, auditor
     org = Column(String(128), default="District Court")
-    status = Column(String(32), default="active")
+    court = Column(String(128), nullable=True, default="Chief Judicial Magistrate, Patiala House Courts")
+    court_registry = Column(String(128), nullable=True, default="Patiala House Courts Registry")
+    status = Column(String(32), default="active") # active, disabled
     mfa_enabled = Column(Boolean, default=False)
+    failed_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    token_version = Column(Integer, default=1)
+    last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now)
+
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    participations = relationship("CaseParticipant", back_populates="user", cascade="all, delete-orphan")
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    token_hash = Column(String(256), nullable=False)
+    family_id = Column(String(36), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    revoked = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User", back_populates="refresh_tokens")
 
 class Case(Base):
     __tablename__ = "cases"
@@ -33,12 +54,16 @@ class Case(Base):
     case_number = Column(String(64), unique=True, nullable=False)
     title = Column(String(256), nullable=False)
     court = Column(String(128), default="Chief Judicial Magistrate, Patiala House Courts")
+    court_id = Column(String(64), default="DL-PHC-CJM-01")
+    courtroom = Column(String(64), default="Courtroom 3")
     case_type = Column(String(64), nullable=False) # Bail, Criminal Trial, Civil Suit, Habeas Corpus, Maintenance
     status = Column(String(32), default="pending") # pending, scheduled, disposed, under_review
     filing_date = Column(String(32), nullable=False)
     custody_flag = Column(Boolean, default=False)
     custody_since = Column(String(32), nullable=True) # ISO Date or null
     statutory_deadline = Column(String(32), nullable=True) # ISO Date or null
+    max_sentence_months = Column(Integer, nullable=True) # For fraction of max sentence custody score
+    first_time_offender = Column(Boolean, nullable=True)
     vulnerable_party = Column(Boolean, default=False) # Senior Citizen, minor, disability, woman
     vulnerability_reason = Column(String(256), nullable=True)
     complainant = Column(String(128), default="State of Delhi")
@@ -46,10 +71,22 @@ class Case(Base):
     related_case_ids = Column(JSON, default=list) # Clubbing related cases
     created_at = Column(DateTime, default=utc_now)
 
+    participants = relationship("CaseParticipant", back_populates="case", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="case", cascade="all, delete-orphan")
     triage = relationship("TriageResult", back_populates="case", uselist=False, cascade="all, delete-orphan")
     summaries = relationship("Summary", back_populates="case", cascade="all, delete-orphan")
     hearings = relationship("Hearing", back_populates="case", cascade="all, delete-orphan")
+
+class CaseParticipant(Base):
+    __tablename__ = "case_participants"
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    case_id = Column(String(36), ForeignKey("cases.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    participant_role = Column(String(32), nullable=False) # judge, advocate, investigating_officer, litigant
+    created_at = Column(DateTime, default=utc_now)
+
+    case = relationship("Case", back_populates="participants")
+    user = relationship("User", back_populates="participations")
 
 class Document(Base):
     __tablename__ = "documents"
@@ -76,7 +113,7 @@ class DocumentVersion(Base):
     object_key = Column(String(256), nullable=False) # Encrypted local or S3 path
     sha256 = Column(String(64), nullable=False) # Content integrity digest
     size_bytes = Column(Integer, default=0)
-    encrypted_key_ref = Column(String(128), default="MASTER-AES-256-GCM")
+    encrypted_key_ref = Column(Text, default="MASTER-AES-256-GCM") # Key reference or wrapped key (SEC-03)
     created_at = Column(DateTime, default=utc_now)
 
     document = relationship("Document", back_populates="versions")
@@ -100,7 +137,7 @@ class RedactionMap(Base):
     document_id = Column(String(36), ForeignKey("documents.id"), nullable=False)
     token = Column(String(64), nullable=False) # e.g. [PERSON_1], [PHONE_1]
     encrypted_value = Column(Text, nullable=False) # AES-256 encrypted original PII
-    category = Column(String(32), default="pii") # name, phone, aadhaar, minor, address
+    category = Column(String(32), default="pii") # name, phone, aadhaar, minor, address, victim, bank, ifsc, vehicle
     created_at = Column(DateTime, default=utc_now)
 
     document = relationship("Document", back_populates="redactions")
@@ -114,6 +151,10 @@ class TriageResult(Base):
     factors = Column(JSON, default=list) # List of factor breakdown objects
     reasons = Column(JSON, default=list) # Plain language explanations
     needs_human_review = Column(Boolean, default=True)
+    review_state = Column(String(32), default="pending_review") # pending_review, approved, rejected (DATA-04)
+    reviewed_by = Column(String(128), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
     overridden_by = Column(String(128), nullable=True)
     override_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now)
@@ -131,6 +172,10 @@ class Summary(Base):
     positions = Column(JSON, default=dict) # {"petitioner": "...", "respondent": "..."}
     pending_deadlines = Column(JSON, default=list)
     citations_verified = Column(Boolean, default=True)
+    review_state = Column(String(32), default="pending_review") # pending_review, approved, rejected (DATA-04)
+    reviewed_by = Column(String(128), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
     case = relationship("Case", back_populates="summaries")
@@ -154,6 +199,7 @@ class ScheduleSuggestion(Base):
     case_id = Column(String(36), nullable=False)
     suggestions = Column(JSON, default=list)
     conflicts = Column(JSON, default=list)
+    solver = Column(String(32), default="cp-sat") # cp-sat, greedy-fallback (SCH-01)
     run_id = Column(String(64), default=generate_uuid)
     created_at = Column(DateTime, default=utc_now)
 
@@ -162,13 +208,15 @@ class AgentRun(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     case_id = Column(String(36), nullable=True)
     agent = Column(String(64), nullable=False)
+    generated_by = Column(String(16), default="rules") # rules or llm (AI-04)
     model = Column(String(64), default="hybrid-rule-llm")
+    provider = Column(String(32), default="none")
     prompt_version = Column(String(32), default="v1.0")
     input_hash = Column(String(64), nullable=False)
     output_hash = Column(String(64), nullable=False)
     latency_ms = Column(Integer, default=0)
     tokens = Column(Integer, default=0)
-    status = Column(String(32), default="success")
+    status = Column(String(32), default="success") # success, fallback, needs_human_review, failed
     created_at = Column(DateTime, default=utc_now)
 
 class AuditLog(Base):
@@ -177,8 +225,8 @@ class AuditLog(Base):
     ts = Column(String(32), nullable=False) # ISO 8601
     actor_id = Column(String(128), nullable=False)
     actor_name = Column(String(128), default="System")
-    action = Column(String(64), nullable=False) # upload, view, decrypt, triage, override, schedule, verify
-    object_type = Column(String(64), nullable=False) # document, case, schedule, audit
+    action = Column(String(64), nullable=False) # login_success, login_failure, logout, upload, etc.
+    object_type = Column(String(64), nullable=False) # auth, document, case, schedule, audit, user
     object_id = Column(String(128), nullable=False)
     details = Column(JSON, default=dict)
     prev_hash = Column(String(64), nullable=False)
@@ -223,4 +271,3 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-

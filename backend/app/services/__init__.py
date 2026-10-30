@@ -10,3 +10,4 @@ __all__ = [
     "store_case_document", "retrieve_and_decrypt_document",
     "OCRService", "RedactionService", "CitationVerifier"
 ]
+

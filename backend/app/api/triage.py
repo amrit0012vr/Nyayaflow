@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.models.database import get_db, Case, TriageResult
+from app.models.database import get_db, TriageResult, User
 from app.schemas.schemas import TriageResponse, TriageOverrideRequest
-from app.core.rbac import get_current_user_payload
+from app.core.rbac import require_permission
+from app.core.scope import get_scoped_case_or_404
 from app.services.audit import log_audit_action
 
 router = APIRouter(prefix="/cases", tags=["Triage"])
@@ -11,11 +12,10 @@ router = APIRouter(prefix="/cases", tags=["Triage"])
 def get_triage(
     id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("triage:read"))
 ):
-    case = db.query(Case).filter(Case.id == id).first()
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
+    """DATA-02 / RBAC-01: Scoped triage record fetch."""
+    case = get_scoped_case_or_404(id, current_user, db)
 
     triage = db.query(TriageResult).filter(TriageResult.case_id == case.id).first()
     if not triage:
@@ -28,6 +28,8 @@ def get_triage(
         factors=triage.factors or [],
         reasons=triage.reasons or [],
         needs_human_review=triage.needs_human_review,
+        review_state=triage.review_state or "pending_review",
+        reviewed_by=triage.reviewed_by,
         overridden_by=triage.overridden_by,
         override_reason=triage.override_reason
     )
@@ -37,51 +39,53 @@ def override_triage(
     id: str,
     payload: TriageOverrideRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("triage:override"))
 ):
-    if not payload.reason.strip():
-        raise HTTPException(status_code=400, detail="Mandatory justification reason required for judicial override")
+    """
+    TRI-04: Human-in-the-loop override by Clerk.
+    Requires justification reason of at least 10 chars, retains original score,
+    and logs immutable audit event.
+    """
+    if len(payload.reason.strip()) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mandatory justification reason must be at least 10 characters long (TRI-04)"
+        )
 
-    case = db.query(Case).filter(Case.id == id).first()
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
+    case = get_scoped_case_or_404(id, current_user, db)
 
     triage = db.query(TriageResult).filter(TriageResult.case_id == case.id).first()
     if not triage:
         raise HTTPException(status_code=404, detail="Triage record not found")
 
     old_tier = triage.tier
-    triage.tier = payload.new_tier
-    triage.overridden_by = current_user.get("name", "Court Clerk")
+    triage.tier = payload.new_tier.lower()
+    triage.overridden_by = current_user.name
     triage.override_reason = payload.reason
     triage.needs_human_review = False
     db.commit()
 
-    # Log human-in-the-loop override in append-only audit trail
+    # Log override into audit ledger
     log_audit_action(
         db=db,
-        actor_id=current_user.get("user_id", "clerk"),
-        actor_name=current_user.get("name", "Court Clerk"),
+        actor_id=current_user.id,
+        actor_name=current_user.name,
         action="override_triage",
         object_type="triage",
-        object_id=triage.id,
+        object_id=str(triage.id),
         details={
-            "case_id": case.id,
             "case_number": case.case_number,
-            "previous_tier": old_tier,
-            "new_tier": payload.new_tier,
-            "justification": payload.reason
+            "old_tier": old_tier,
+            "new_tier": triage.tier,
+            "reason": payload.reason
         }
     )
 
     return {
         "status": "success",
-        "message": f"Triage tier successfully overridden from '{old_tier}' to '{payload.new_tier}'.",
-        "triage": {
-            "tier": triage.tier,
-            "score": triage.score,
-            "overridden_by": triage.overridden_by,
-            "override_reason": triage.override_reason
-        }
+        "case_id": case.id,
+        "old_tier": old_tier,
+        "new_tier": triage.tier,
+        "overridden_by": current_user.name,
+        "override_reason": payload.reason
     }
-

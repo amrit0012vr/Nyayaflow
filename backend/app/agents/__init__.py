@@ -10,3 +10,4 @@ __all__ = [
     "IntakeAgent", "TriageAgent", "SummarisationAgent",
     "SchedulingAgent", "LegalAidAgent", "OrchestratorAgent"
 ]
+

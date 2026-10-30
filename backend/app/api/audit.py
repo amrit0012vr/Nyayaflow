@@ -1,10 +1,11 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, HTTPException, Body
+from fastapi import APIRouter, Depends, Query, HTTPException, Body, status
 from sqlalchemy.orm import Session
-from app.models.database import get_db, AuditLog
+from app.config import settings
+from app.models.database import get_db, AuditLog, User
 from app.schemas.schemas import AuditLogOut, AuditVerifyResponse
-from app.core.rbac import get_current_user_payload
-from app.services.audit import verify_audit_chain, simulate_tampering_for_demo
+from app.core.rbac import require_permission
+from app.services.audit import verify_audit_chain, simulate_tampering_for_demo, get_audit_head
 
 router = APIRouter(prefix="/audit", tags=["Audit & Integrity Chain"])
 
@@ -14,8 +15,9 @@ def get_audit_logs(
     action: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("audit:read"))
 ):
+    """RBAC-01: Restricted to Auditor and Admin roles."""
     query = db.query(AuditLog)
     if object_id:
         query = query.filter(AuditLog.object_id == object_id)
@@ -42,7 +44,7 @@ def get_audit_logs(
 @router.post("/verify", response_model=AuditVerifyResponse)
 def verify_chain(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("audit:verify"))
 ):
     """
     Verifies every cryptographic link and SHA-256 hash in the audit chain.
@@ -56,20 +58,32 @@ def verify_chain(
         message=res["message"]
     )
 
+@router.get("/head")
+def get_chain_head(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("audit:read"))
+):
+    """SEC-06: Returns current chain head hash and height for external anchoring."""
+    return get_audit_head(db)
+
 @router.post("/simulate-tamper")
 def simulate_tamper(
     entry_id: int = Body(..., embed=True),
     fake_action: str = Body("unauthorized_evidence_tamper", embed=True),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: User = Depends(require_permission("audit:simulate"))
 ):
     """
-    Interactive demonstration tool:
-    Simulates a rogue database update. When the auditor clicks 'Verify Chain',
-    NyayaFlow immediately flags the broken cryptographic hash.
+    SEC-04: Interactive demonstration tool:
+    Only allowed when DEMO_MODE=true. If DEMO_MODE=false, returns 404.
     """
+    if not settings.DEMO_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tamper simulation is disabled in non-demo mode (SEC-04)"
+        )
+
     res = simulate_tampering_for_demo(db, entry_id, fake_action)
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error"))
     return res
-
