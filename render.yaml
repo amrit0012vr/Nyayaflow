@@ -19,16 +19,14 @@ services:
       - key: MASTER_KEY
         generateValue: true
 
-  # 2. React + Vite Frontend Static Site
+  # 2. React + Vite Frontend Static Site (Distributed on Global CDN)
   - type: web
     name: nyayaflow-frontend
     runtime: static
-    region: oregon
-    plan: free
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
     staticPublishPath: frontend/dist
     routes:
-      # Proxy all API requests directly to backend web service (avoids CORS and cross-origin cookie issues)
+      # Proxy all API requests directly to backend web service
       - type: rewrite
         source: /api/*
         destination: https://nyayaflow-backend.onrender.com/api/*
@@ -36,4 +34,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
