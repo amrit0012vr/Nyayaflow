@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { AuditEntry } from '../types';
 import { api } from '../lib/api';
-import { 
-  ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, 
-  RefreshCw, Lock, Link, Eye, Bug, Scale 
+import {
+  ShieldCheck,
+  ShieldAlert,
+  RefreshCw,
+  Link,
+  Bug,
+  Scale,
+  Printer
 } from 'lucide-react';
+import { Panel } from './ui/Panel';
+import { Button } from './ui/Button';
+import { InlineBanner } from './ui/InlineBanner';
 
 export const AuditChainViewer: React.FC = () => {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
@@ -41,7 +49,6 @@ export const AuditChainViewer: React.FC = () => {
     setTampering(true);
     try {
       await api.simulateTamper(entryId);
-      // Immediately run verification to show the live detection
       const res = await api.verifyAuditChain();
       setVerificationResult(res);
       fetchLogs();
@@ -52,6 +59,10 @@ export const AuditChainViewer: React.FC = () => {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   useEffect(() => {
     fetchLogs();
     handleVerifyChain();
@@ -59,144 +70,161 @@ export const AuditChainViewer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wider uppercase">
-            <Scale className="w-4 h-4" /> Judicial Vigilance & Cryptographic Audit Trail
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+              <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+              <span>Judicial Vigilance &bull; Tamper-Evident Audit Ledger</span>
+            </div>
+            <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+              Cryptographic Audit Chain &amp; Integrity Verifier
+            </h1>
+            <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+            <p className="text-sm text-[#4A4F57] max-w-3xl">
+              Formula: <code className="text-[#0B2A5B] font-mono text-xs bg-[#F4F6FA] px-1 py-0.5 rounded border border-[#C5CCD6]">entry_hash_n = SHA256(prev_hash || ts || actor || action || object || details)</code>. Tamper-evident append-only ledger.
+            </p>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
-            Tamper-Evident Hash Chain & Integrity Verifier
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Formula: <code className="text-amber-300 font-mono text-xs">entry_hash_n = SHA256(prev_hash || ts || actor || action || object || details)</code>. Guaranteed append-only immutability.
-          </p>
-        </div>
 
-        {/* Verification Trigger Buttons */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={handleVerifyChain}
-            disabled={verifying}
-            className="px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs sm:text-sm hover:bg-emerald-400 transition flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-          >
-            {verifying ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <ShieldCheck className="w-4 h-4" />
-            )}
-            Verify Audit Chain Integrity
-          </button>
-
-          <button
-            onClick={() => handleSimulateTamper(logs[0]?.id || 1)}
-            disabled={tampering || logs.length === 0}
-            className="px-4 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
-          >
-            <Bug className="w-4 h-4" />
-            Simulate Tamper Demo
-          </button>
+          <div className="flex items-center gap-3 print:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Print Report</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              isBusy={verifying}
+              disabled={verifying}
+              onClick={handleVerifyChain}
+              className="flex items-center gap-1.5"
+            >
+              <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+              <span>Verify Integrity</span>
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={tampering || logs.length === 0}
+              onClick={() => handleSimulateTamper(logs[0]?.id || 1)}
+              className="flex items-center gap-1.5"
+            >
+              <Bug className="w-4 h-4" aria-hidden="true" />
+              <span>Simulate Tamper Demo</span>
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Verification Status Card */}
       {verificationResult && (
         <div
-          className={`p-5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition shadow-xl ${
+          role="status"
+          className={`p-5 rounded border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors ${
             verificationResult.is_valid
-              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-              : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
+              ? 'bg-[#137333]/10 border-[#137333]/40 text-[#137333]'
+              : 'bg-[#B3261E]/10 border-[#B3261E]/40 text-[#B3261E]'
           }`}
         >
           <div className="flex items-center gap-3">
             <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+              className={`w-12 h-12 rounded flex items-center justify-center shrink-0 border ${
                 verificationResult.is_valid
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : 'bg-rose-500/20 border-rose-500/40 text-rose-400 animate-bounce'
+                  ? 'bg-white border-[#137333]/30 text-[#137333]'
+                  : 'bg-white border-[#B3261E]/30 text-[#B3261E]'
               }`}
             >
               {verificationResult.is_valid ? (
-                <ShieldCheck className="w-7 h-7" />
+                <ShieldCheck className="w-6 h-6" aria-hidden="true" />
               ) : (
-                <ShieldAlert className="w-7 h-7" />
+                <ShieldAlert className="w-6 h-6" aria-hidden="true" />
               )}
             </div>
             <div>
-              <div className="text-base font-bold">
+              <h2 className="text-base font-bold text-[#1A1A1A]">
                 {verificationResult.is_valid
                   ? 'Cryptographic Chain Integrity Confirmed'
-                  : 'Tampering Detected in Judicial Chain!'}
-              </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+                  : 'Tampering Detected in Judicial Audit Chain!'}
+              </h2>
+              <p className="text-xs text-[#4A4F57] mt-0.5">
                 {verificationResult.message}
               </p>
             </div>
           </div>
 
-          <div className="text-xs font-mono bg-slate-900/80 px-4 py-2 rounded-lg border border-slate-700/60 shrink-0">
-            Total Blocks: <strong>{verificationResult.total_entries_checked}</strong> | Broken At:{' '}
-            <strong>{verificationResult.broken_at_id ?? 'None (Clean)'}</strong>
+          <div className="text-xs font-mono bg-white px-3 py-2 rounded border border-[#C5CCD6] shrink-0 text-[#1A1A1A]">
+            Total Entries: <strong>{verificationResult.total_entries_checked}</strong> | Broken At:{' '}
+            <strong className={verificationResult.is_valid ? 'text-[#137333]' : 'text-[#B3261E]'}>
+              {verificationResult.broken_at_id ?? 'None (Clean)'}
+            </strong>
           </div>
         </div>
       )}
 
       {/* Chain Timeline Blocks */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <Link className="w-4 h-4 text-amber-400" />
-            Append-Only Cryptographic Audit Log Entries ({logs.length})
-          </h2>
-          <span className="text-xs text-slate-400 font-mono">Genesis: 0000000000...</span>
-        </div>
-
+      <Panel
+        title={`Audit Log Entries (${logs.length})`}
+        subtitle="Chronological sequence of verified ledger blocks"
+        action={
+          <span className="text-xs font-mono text-[#757575]">
+            Genesis: 000000000000...
+          </span>
+        }
+      >
         {loading ? (
-          <div className="p-12 text-center text-slate-400 animate-pulse">
-            Loading cryptographic hash blocks...
+          <div className="p-12 text-center text-[#4A4F57]">
+            <div className="w-8 h-8 border-4 border-[#0B2A5B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm font-semibold">Loading cryptographic hash blocks...</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/80 max-h-[650px] overflow-y-auto">
+          <div className="divide-y divide-[#C5CCD6] max-h-[650px] overflow-y-auto">
             {logs.map((entry) => (
-              <div key={entry.id} className="p-4 hover:bg-slate-800/40 transition space-y-2 text-xs">
+              <div key={entry.id} className="py-4 px-2 hover:bg-[#F4F6FA] transition-colors space-y-2 text-xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    <span className="font-mono font-bold text-[#0B2A5B] bg-[#0B2A5B]/10 px-2 py-0.5 rounded border border-[#0B2A5B]/20">
                       Block #{entry.id}
                     </span>
-                    <span className="font-semibold text-white uppercase tracking-wider text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+                    <span className="font-semibold text-[#1A1A1A] uppercase tracking-wider text-[11px] px-2 py-0.5 rounded bg-[#F4F6FA] border border-[#C5CCD6]">
                       {entry.action}
                     </span>
-                    <span className="text-slate-400">by <strong className="text-slate-200">{entry.actor_name}</strong></span>
+                    <span className="text-[#4A4F57]">
+                      by <strong className="text-[#1A1A1A]">{entry.actor_name}</strong>
+                    </span>
                   </div>
 
-                  <span className="text-slate-500 font-mono text-[11px]">{entry.ts}</span>
+                  <span className="text-[#757575] font-mono text-[11px]">{entry.ts}</span>
                 </div>
 
                 {/* Hashes Linkage Visual */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono bg-slate-950 p-2.5 rounded-lg border border-slate-800 break-all">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono bg-[#F4F6FA] p-2.5 rounded border border-[#C5CCD6] break-all">
                   <div>
-                    <span className="text-slate-500 block">Previous Hash (H_prev):</span>
-                    <span className="text-slate-400">{entry.prev_hash}</span>
+                    <span className="text-[#757575] block font-sans">Previous Hash (H_prev):</span>
+                    <span className="text-[#4A4F57]">{entry.prev_hash}</span>
                   </div>
                   <div>
-                    <span className="text-amber-400 block">Entry Hash (SHA-256):</span>
-                    <span className="text-amber-300 font-bold">{entry.entry_hash}</span>
+                    <span className="text-[#0B2A5B] block font-sans font-bold">Entry Hash (SHA-256):</span>
+                    <span className="text-[#0B2A5B] font-bold">{entry.entry_hash}</span>
                   </div>
                 </div>
 
                 {/* Details Payload */}
                 {entry.details && Object.keys(entry.details).length > 0 && (
-                  <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded border border-slate-800/60">
-                    <strong className="text-slate-300">Payload:</strong> {JSON.stringify(entry.details)}
+                  <div className="text-[11px] text-[#4A4F57] bg-white p-2 rounded border border-[#C5CCD6]">
+                    <strong className="text-[#1A1A1A]">Payload:</strong> {JSON.stringify(entry.details)}
                   </div>
                 )}
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 };
-

@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Case, TriageResponse, SummaryResponse, SourceCitation } from '../types';
 import { api } from '../lib/api';
-import { 
-  AlertCircle, Clock, ShieldAlert, FileText, CheckCircle2, 
-  ExternalLink, ChevronRight, X, UserCheck, AlertTriangle, Scale 
+import {
+  Clock,
+  FileText,
+  CheckCircle2,
+  ChevronRight,
+  UserCheck,
+  AlertTriangle,
+  Scale,
+  Search,
+  BookOpen
 } from 'lucide-react';
+import { StatusChip, ChipVariant } from './ui/StatusChip';
+import { Panel } from './ui/Panel';
+import { Button } from './ui/Button';
+import { Dialog } from './ui/Dialog';
 
 export const JudgeCauseList: React.FC = () => {
   const [cases, setCases] = useState<Case[]>([]);
@@ -51,298 +62,362 @@ export const JudgeCauseList: React.FC = () => {
     }
   };
 
-  const getTierBadge = (tier?: string, score?: number) => {
-    switch (tier) {
+  const mapTierToVariant = (tier?: string): ChipVariant => {
+    switch (tier?.toLowerCase()) {
       case 'critical':
-        return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shadow-sm">
-            <ShieldAlert className="w-3.5 h-3.5 animate-pulse" /> Critical Priority ({score ?? 85}/100)
-          </span>
-        );
+        return 'critical';
       case 'high':
-        return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5" /> High Urgency ({score ?? 65}/100)
-          </span>
-        );
+        return 'high';
       case 'normal':
-        return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-sky-500/20 text-sky-400 border border-sky-500/30">
-            Normal ({score ?? 40}/100)
-          </span>
-        );
+        return 'normal';
       default:
-        return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-400 border border-slate-700">
-            Low ({score ?? 15}/100)
-          </span>
-        );
+        return 'low';
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wider uppercase">
-            <Scale className="w-4 h-4" /> Judicial Bench Portal • Prioritized Cause List
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
-            Automated Urgency Triage & Cause List
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Cases intelligently ranked by statutory urgency factors: under-trial custody duration, limitation deadlines, and vulnerable party status.
-          </p>
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+          <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+          <span>Judicial Bench Docket &bull; Prioritized Cause List</span>
         </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setSelectedTier('')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              selectedTier === '' ? 'bg-slate-700 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            All Tiers ({cases.length})
-          </button>
-          <button
-            onClick={() => setSelectedTier('critical')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              selectedTier === 'critical' ? 'bg-rose-600 text-white shadow' : 'bg-slate-800 text-rose-400 hover:bg-slate-700'
-            }`}
-          >
-            Critical Tier
-          </button>
-          <button
-            onClick={() => setSelectedTier('high')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              selectedTier === 'high' ? 'bg-amber-600 text-white shadow' : 'bg-slate-800 text-amber-400 hover:bg-slate-700'
-            }`}
-          >
-            High Tier
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+          Automated Urgency Triage &amp; Cause List
+        </h1>
+        <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+        <p className="text-sm text-[#4A4F57] max-w-3xl">
+          Matters ranked by statutory urgency factors: under-trial custody duration, limitation deadlines, and vulnerable party protections.
+        </p>
       </div>
 
-      {/* Case Table / Cards */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between gap-4 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by case number, title, or party..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-3.5 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500 w-full sm:w-80"
-          />
-          <div className="text-xs text-slate-400">
-            Showing <span className="font-semibold text-slate-200">{cases.length}</span> prioritized cause-list matters
+      {/* Filter and Search Panel */}
+      <Panel
+        title="Cause List Filters"
+        subtitle={`Showing ${cases.length} active listings`}
+      >
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <label htmlFor="cause-list-search" className="sr-only">
+              Search by case number, title, or party
+            </label>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#757575]">
+              <Search className="w-4 h-4" aria-hidden="true" />
+            </div>
+            <input
+              id="cause-list-search"
+              type="text"
+              placeholder="Search by case number, title, or party..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#C5CCD6] rounded text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B] focus:border-[#0B2A5B]"
+            />
+          </div>
+
+          {/* Tier Buttons */}
+          <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Filter cause list by urgency tier">
+            <button
+              type="button"
+              onClick={() => setSelectedTier('')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
+                selectedTier === ''
+                  ? 'bg-[#0B2A5B] text-white border-[#0B2A5B]'
+                  : 'bg-white text-[#1A1A1A] border-[#C5CCD6] hover:bg-[#F4F6FA]'
+              }`}
+            >
+              All Tiers ({cases.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTier('critical')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
+                selectedTier === 'critical'
+                  ? 'bg-[#B3261E] text-white border-[#B3261E]'
+                  : 'bg-white text-[#B3261E] border-[#C5CCD6] hover:bg-[#B3261E]/5'
+              }`}
+            >
+              Critical Priority
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTier('high')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
+                selectedTier === 'high'
+                  ? 'bg-[#8A4B00] text-white border-[#8A4B00]'
+                  : 'bg-white text-[#8A4B00] border-[#C5CCD6] hover:bg-[#FF9933]/10'
+              }`}
+            >
+              High Urgency
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTier('normal')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
+                selectedTier === 'normal'
+                  ? 'bg-[#0B5FA5] text-white border-[#0B5FA5]'
+                  : 'bg-white text-[#0B5FA5] border-[#C5CCD6] hover:bg-[#0B5FA5]/10'
+              }`}
+            >
+              Normal
+            </button>
           </div>
         </div>
+      </Panel>
 
+      {/* Case Matters List */}
+      <Panel title="Scheduled Bench Matters">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 animate-pulse">
-            Loading prioritized cause list...
+          <div className="p-12 text-center text-[#4A4F57]">
+            <div className="w-8 h-8 border-4 border-[#0B2A5B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm font-semibold">Loading prioritized cause list...</p>
           </div>
         ) : cases.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            No cases match the selected filter criteria.
+          <div className="p-12 text-center text-[#4A4F57]">
+            <p className="text-base font-semibold text-[#1A1A1A]">No matters found</p>
+            <p className="text-xs mt-1">No cases match the selected filter or search criteria.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/80">
+          <div className="divide-y divide-[#C5CCD6]">
             {cases.map((c) => (
               <div
                 key={c.id}
-                onClick={() => handleOpenCase(c)}
-                className="p-5 hover:bg-slate-800/50 transition cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                className="py-4 px-2 hover:bg-[#F4F6FA] transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm font-bold text-amber-400">{c.case_number}</span>
-                    {getTierBadge(c.triage_tier, c.triage_score)}
-                    <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                    <span className="font-mono text-sm font-bold text-[#0B2A5B]">
+                      {c.case_number}
+                    </span>
+                    <StatusChip
+                      variant={mapTierToVariant(c.triage_tier)}
+                      label={`${c.triage_tier ? c.triage_tier.toUpperCase() : 'LOW'} (${c.triage_score ?? 15}/100)`}
+                    />
+                    <span className="text-xs px-2 py-0.5 rounded bg-[#F4F6FA] text-[#4A4F57] border border-[#C5CCD6]">
                       {c.case_type}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-semibold text-white group-hover:text-amber-300">
+                  <h2 className="text-base font-bold text-[#1A1A1A]">
                     {c.title}
-                  </h3>
+                  </h2>
 
-                  <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
-                    <span>Forum: <strong className="text-slate-300">{c.court}</strong></span>
-                    <span>Filed: <strong className="text-slate-300">{c.filing_date.slice(0, 10)}</strong></span>
+                  <div className="flex items-center gap-4 text-xs text-[#4A4F57] flex-wrap">
+                    <span>
+                      Court: <strong className="text-[#1A1A1A]">{c.court}</strong>
+                    </span>
+                    <span>
+                      Filed: <strong className="text-[#1A1A1A]">{c.filing_date.slice(0, 10)}</strong>
+                    </span>
                     {c.custody_flag && (
-                      <span className="text-rose-400 font-medium flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> Undertrial in Custody ({c.custody_since ? `${Math.round((new Date().getTime() - new Date(c.custody_since).getTime())/(1000*60*60*24*30))} months` : 'Active'})
+                      <span className="text-[#B3261E] font-medium flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                        Undertrial in Custody ({c.custody_since ? `${Math.round((new Date().getTime() - new Date(c.custody_since).getTime()) / (1000 * 60 * 60 * 24 * 30))} months` : 'Active'})
                       </span>
                     )}
                     {c.statutory_deadline && (
-                      <span className="text-amber-400 font-medium flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" /> Statutory Deadline: {c.statutory_deadline.slice(0, 10)}
+                      <span className="text-[#8A4B00] font-medium flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
+                        Statutory Deadline: {c.statutory_deadline.slice(0, 10)}
                       </span>
                     )}
                     {c.vulnerable_party && (
-                      <span className="text-emerald-400 font-medium flex items-center gap-1">
-                        <UserCheck className="w-3.5 h-3.5" /> Priority: {c.vulnerability_reason}
+                      <span className="text-[#137333] font-medium flex items-center gap-1">
+                        <UserCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                        Priority: {c.vulnerability_reason}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-medium text-xs flex items-center gap-1 transition">
-                    Bench Brief & Citations <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                <div className="shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenCase(c)}
+                    className="flex items-center gap-1.5"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#0B2A5B]" aria-hidden="true" />
+                    <span>Bench Brief &amp; Citations</span>
+                    <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Panel>
 
-      {/* Case Dossier Modal */}
+      {/* Bench Brief Accessible Dialog */}
       {selectedCase && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-bold text-amber-400">{selectedCase.case_number}</span>
-                  {getTierBadge(selectedCase.triage_tier, selectedCase.triage_score)}
-                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Citations Verified
-                  </span>
-                </div>
-                <h2 className="text-xl font-bold text-white">{selectedCase.title}</h2>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedCase.court} • Ingested Files: {selectedCase.document_count}</p>
-              </div>
-              <button
-                onClick={() => setSelectedCase(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
+        <Dialog
+          isOpen={!!selectedCase}
+          onClose={() => setSelectedCase(null)}
+          title={`Judicial Bench Brief — ${selectedCase.case_number}`}
+          description={`${selectedCase.court} • Case Ingestion Record`}
+          maxWidth="max-w-4xl"
+        >
+          {modalLoading ? (
+            <div className="p-12 text-center text-[#4A4F57]">
+              <div className="w-8 h-8 border-4 border-[#0B2A5B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-sm font-semibold">Generating 1-page Bench Brief and verifying citations...</p>
             </div>
-
-            {modalLoading ? (
-              <div className="p-12 text-center text-slate-400 animate-pulse">
-                Generating 1-page Bench Brief and verifying citations from encrypted vault...
+          ) : (
+            <div className="space-y-6">
+              {/* Header Details */}
+              <div className="p-4 bg-[#F4F6FA] border border-[#C5CCD6] rounded space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-sm font-bold text-[#0B2A5B]">
+                    {selectedCase.case_number}
+                  </span>
+                  <StatusChip
+                    variant={mapTierToVariant(selectedCase.triage_tier)}
+                    label={`${selectedCase.triage_tier?.toUpperCase() || 'LOW'} (${selectedCase.triage_score ?? 15}/100)`}
+                  />
+                  <StatusChip variant="ai" label="AI-assisted — verify with source" />
+                </div>
+                <h3 className="text-lg font-bold text-[#1A1A1A]">{selectedCase.title}</h3>
+                <p className="text-xs text-[#4A4F57]">
+                  Ingested Files: {selectedCase.document_count} &bull; Filed on {selectedCase.filing_date.slice(0, 10)}
+                </p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* 1-Page Bench Brief Card */}
-                {caseSummary && (
-                  <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-5 shadow-inner">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-amber-400" />
-                        <h3 className="font-bold text-white text-base">Judicial Bench Brief (Concise &lt;= 250 Words)</h3>
-                      </div>
-                      <span className="text-xs text-slate-400">AI-Assisted • Advisory Decision Support</span>
-                    </div>
 
-                    <div className="text-sm text-slate-200 leading-relaxed font-serif-legal bg-slate-900/60 p-4 rounded-lg border border-slate-700/60">
-                      {caseSummary.brief}
-                    </div>
-
-                    {/* Timeline with Clickable Citations */}
-                    <div className="mt-4">
-                      <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                        Chronological Event Timeline (Click Citation to Verify)
+              {/* 1-Page Bench Brief Card */}
+              {caseSummary && (
+                <div className="border border-[#C5CCD6] rounded p-5 bg-white space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#C5CCD6]">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-[#0B2A5B]" aria-hidden="true" />
+                      <h4 className="font-bold text-[#0B2A5B] text-base">
+                        Judicial Bench Brief (Concise &le; 250 Words)
                       </h4>
-                      <div className="space-y-2">
-                        {caseSummary.timeline.map((ev, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => ev.source && setActiveCitation(ev.source)}
-                            className={`p-2.5 rounded-lg border text-xs flex items-center justify-between gap-3 cursor-pointer transition ${
-                              activeCitation === ev.source
-                                ? 'bg-amber-500/20 border-amber-500 text-amber-200'
-                                : 'bg-slate-900/40 border-slate-800 text-slate-300 hover:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="font-mono text-slate-400 shrink-0">{ev.date}</span>
-                              <span>{ev.event}</span>
-                            </div>
-                            {ev.source && (
-                              <span className="shrink-0 px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 text-[11px] font-mono">
-                                Page {ev.source.page} [{ev.source.span.join('-')}]
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
                     </div>
-
-                    {/* Active Citation Inspection Callout */}
-                    {activeCitation && (
-                      <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1">
-                        <div className="flex items-center justify-between text-amber-400 font-semibold">
-                          <span className="flex items-center gap-1.5">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Verified Ground-Truth Source Citation
-                          </span>
-                          <span className="font-mono">Doc ID: {activeCitation.document_id.slice(0, 8)}... | Page {activeCitation.page}</span>
-                        </div>
-                        <p className="text-slate-300">
-                          Excerpt anchored in encrypted record: <span className="bg-amber-400/20 text-amber-200 px-1 py-0.5 rounded font-mono">"{activeCitation.excerpt || 'verified phrase'}"</span>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Key Issues */}
-                    {caseSummary.issues.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-700/80">
-                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                          Key Legal Issues Framed for Determination
-                        </h4>
-                        <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
-                          {caseSummary.issues.map((iss, i) => (
-                            <li key={i}>{iss}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <span className="text-xs text-[#757575] font-medium">Advisory Decision Support</span>
                   </div>
-                )}
 
-                {/* Explainable Factor Breakdown */}
-                {caseTriage && (
-                  <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-base mb-3 flex items-center justify-between">
-                      <span>Transparent Triage Scoring Factors</span>
-                      <span className="text-xs font-mono text-amber-400">Total Score: {caseTriage.score}/100</span>
-                    </h3>
+                  <div className="text-sm text-[#1A1A1A] leading-relaxed font-serif bg-[#F4F6FA] p-4 rounded border border-[#C5CCD6]">
+                    {caseSummary.brief}
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {caseTriage.factors.map((f, i) => (
-                        <div key={i} className="bg-slate-900/60 border border-slate-700/60 p-3 rounded-lg text-xs flex justify-between items-start gap-2">
-                          <div>
-                            <div className="font-semibold text-slate-200 capitalize">{f.name.replace(/_/g, ' ')}</div>
-                            <div className="text-slate-400 mt-0.5">{f.value}</div>
+                  {/* Timeline with Clickable Citations */}
+                  <div className="mt-4">
+                    <h5 className="text-xs font-bold text-[#0B2A5B] uppercase tracking-wider mb-2">
+                      Chronological Event Timeline (Select citation to verify excerpt)
+                    </h5>
+                    <div className="space-y-2">
+                      {caseSummary.timeline.map((ev, idx) => (
+                        <div
+                          key={idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => ev.source && setActiveCitation(ev.source)}
+                          onKeyDown={(e) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && ev.source) {
+                              e.preventDefault();
+                              setActiveCitation(ev.source);
+                            }
+                          }}
+                          className={`p-3 rounded border text-xs flex items-center justify-between gap-3 cursor-pointer transition ${
+                            activeCitation === ev.source
+                              ? 'bg-[#0B2A5B]/10 border-[#0B2A5B] text-[#0B2A5B] font-semibold'
+                              : 'bg-white border-[#C5CCD6] text-[#1A1A1A] hover:bg-[#F4F6FA]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono text-[#4A4F57] shrink-0 font-bold">{ev.date}</span>
+                            <span>{ev.event}</span>
                           </div>
-                          <span className="font-mono font-bold text-amber-400 shrink-0">
-                            +{f.points} / {f.max_points}
-                          </span>
+                          {ev.source && (
+                            <span className="shrink-0 px-2 py-0.5 rounded bg-[#0B2A5B]/10 text-[#0B2A5B] border border-[#0B2A5B]/30 text-[11px] font-mono">
+                              Page {ev.source.page} [{ev.source.span.join('-')}]
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
-
-                    {caseTriage.overridden_by && (
-                      <div className="mt-3 p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-xs">
-                        <span className="font-semibold text-indigo-400">Judicial Override Applied:</span> Changed to '{caseTriage.tier}' by {caseTriage.overridden_by}. Reason: "{caseTriage.override_reason}"
-                      </div>
-                    )}
                   </div>
-                )}
+
+                  {/* Active Citation Inspection Callout */}
+                  {activeCitation && (
+                    <div className="mt-4 p-4 rounded bg-[#F4F6FA] border-2 border-[#0B2A5B] text-xs space-y-2" role="region" aria-label="Citation Verification Details">
+                      <div className="flex items-center justify-between text-[#0B2A5B] font-bold">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-[#137333]" aria-hidden="true" />
+                          Verified Ground-Truth Source Citation
+                        </span>
+                        <span className="font-mono">
+                          Doc: {activeCitation.document_id.slice(0, 8)}... | Page {activeCitation.page}
+                        </span>
+                      </div>
+                      <p className="text-[#1A1A1A]">
+                        Verified Excerpt: <span className="bg-white px-2 py-1 rounded border border-[#C5CCD6] font-mono font-medium inline-block mt-1">"{activeCitation.excerpt || 'verified phrase'}"</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Key Issues */}
+                  {caseSummary.issues.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-[#C5CCD6]">
+                      <h5 className="text-xs font-bold text-[#0B2A5B] uppercase tracking-wider mb-2">
+                        Key Legal Issues Framed for Determination
+                      </h5>
+                      <ul className="list-disc list-inside text-xs text-[#1A1A1A] space-y-1">
+                        {caseSummary.issues.map((iss, i) => (
+                          <li key={i}>{iss}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Explainable Factor Breakdown */}
+              {caseTriage && (
+                <div className="border border-[#C5CCD6] rounded p-5 bg-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-[#0B2A5B] text-base">
+                      Transparent Triage Scoring Factors
+                    </h4>
+                    <span className="text-xs font-mono font-bold text-[#0B2A5B] bg-[#0B2A5B]/10 px-2 py-1 rounded">
+                      Total Score: {caseTriage.score}/100
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {caseTriage.factors.map((f, i) => (
+                      <div
+                        key={i}
+                        className="bg-[#F4F6FA] border border-[#C5CCD6] p-3 rounded text-xs flex justify-between items-start gap-2"
+                      >
+                        <div>
+                          <div className="font-bold text-[#1A1A1A] capitalize">{f.name.replace(/_/g, ' ')}</div>
+                          <div className="text-[#4A4F57] mt-0.5">{f.value}</div>
+                        </div>
+                        <span className="font-mono font-bold text-[#0B2A5B] shrink-0">
+                          +{f.points} / {f.max_points}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {caseTriage.overridden_by && (
+                    <div className="mt-3 p-3 rounded bg-[#FF9933]/15 border border-[#FF9933]/40 text-xs">
+                      <span className="font-bold text-[#8A4B00]">Judicial Override Applied:</span> Changed to '{caseTriage.tier}' by {caseTriage.overridden_by}. Reason: "{caseTriage.override_reason}"
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button variant="secondary" onClick={() => setSelectedCase(null)}>
+                  Close Bench Brief
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
+        </Dialog>
       )}
     </div>
   );
 };
-

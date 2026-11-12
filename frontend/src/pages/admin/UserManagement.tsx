@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { Users, UserPlus, KeyRound, Check, X, Shield, Search } from 'lucide-react';
+import {
+  Users,
+  UserPlus,
+  KeyRound,
+  Check,
+  X,
+  Search,
+  Scale
+} from 'lucide-react';
+import { Panel } from '../../components/ui/Panel';
+import { Button } from '../../components/ui/Button';
+import { FormField } from '../../components/ui/FormField';
+import { Dialog } from '../../components/ui/Dialog';
+import { InlineBanner } from '../../components/ui/InlineBanner';
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -8,6 +21,7 @@ export const UserManagement: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -22,7 +36,7 @@ export const UserManagement: React.FC = () => {
       const data = await api.getAdminUsers();
       setUsers(data);
     } catch {
-      alert('Failed to load user records');
+      setStatusMessage({ type: 'error', text: 'Failed to load user records from administration endpoint.' });
     } finally {
       setLoading(false);
     }
@@ -34,12 +48,13 @@ export const UserManagement: React.FC = () => {
 
   const handleToggleStatus = async (user: any) => {
     const newStatus = user.status === 'active' ? 'disabled' : 'active';
-    if (!confirm(`Are you sure you want to set status of ${user.name} to ${newStatus}?`)) return;
+    if (!confirm(`Are you sure you want to change status of ${user.name} to ${newStatus}?`)) return;
     try {
       await api.updateAdminUser(user.id, { status: newStatus });
+      setStatusMessage({ type: 'success', text: `Status for ${user.name} changed to ${newStatus}.` });
       loadUsers();
     } catch (err: any) {
-      alert(err.message || 'Update failed');
+      setStatusMessage({ type: 'error', text: err.message || 'Update failed.' });
     }
   };
 
@@ -48,16 +63,17 @@ export const UserManagement: React.FC = () => {
     if (!newPwd) return;
     try {
       await api.updateAdminUser(user.id, { password: newPwd });
-      alert('Password reset successfully and audited in security log.');
+      setStatusMessage({ type: 'success', text: `Password reset for ${user.name} and recorded in audit ledger.` });
       loadUsers();
     } catch (err: any) {
-      alert(err.message || 'Password reset failed');
+      setStatusMessage({ type: 'error', text: err.message || 'Password reset failed.' });
     }
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setStatusMessage(null);
     try {
       await api.createAdminUser({
         name,
@@ -67,220 +83,288 @@ export const UserManagement: React.FC = () => {
         court,
         registry: 'Patiala House Courts Registry'
       });
-      alert('User created successfully.');
+      setStatusMessage({ type: 'success', text: `User account for ${name} (${role}) successfully provisioned.` });
       setShowCreateModal(false);
       setName('');
       setEmail('');
       loadUsers();
     } catch (err: any) {
-      alert(err.message || 'User creation failed');
+      setStatusMessage({ type: 'error', text: err.message || 'User creation failed.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      !search ||
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
     const matchesRole = !roleFilter || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-red-400" />
-            <span>Court User Administration (UI-09)</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage judicial personas, assign registry clearances, and enforce security policies.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+              <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+              <span>System Administration &bull; Access Management</span>
+            </div>
+            <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+              Court User Administration
+            </h1>
+            <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+            <p className="text-sm text-[#4A4F57] max-w-2xl">
+              Manage user accounts, assign judicial and registry roles, and enforce security policies.
+            </p>
+          </div>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-lg"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Create Court User</span>
-        </button>
+          <Button
+            variant="primary"
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" aria-hidden="true" />
+            <span>Create New User</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 bg-slate-900 border border-slate-800 p-4 rounded-xl mb-6">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+      {statusMessage && (
+        <InlineBanner
+          variant={statusMessage.type === 'success' ? 'success' : 'danger'}
+          title={statusMessage.type === 'success' ? 'Administration Action Completed' : 'Administration Error'}
+        >
+          {statusMessage.text}
+        </InlineBanner>
+      )}
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-[#F4F6FA] border border-[#C5CCD6] p-4 rounded">
+        <div className="flex-1 relative">
+          <label htmlFor="user-admin-search" className="sr-only">
+            Search by user name or official email
+          </label>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#757575]">
+            <Search className="w-4 h-4" aria-hidden="true" />
+          </div>
           <input
+            id="user-admin-search"
             type="text"
             placeholder="Search by user name or official email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
           />
         </div>
 
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300"
-        >
-          <option value="">All Personas</option>
-          <option value="judge">Judge</option>
-          <option value="clerk">Clerk</option>
-          <option value="lawyer">Advocate</option>
-          <option value="police">Police</option>
-          <option value="citizen">Citizen</option>
-          <option value="auditor">Auditor</option>
-          <option value="admin">Admin</option>
-        </select>
+        <div className="w-full sm:w-60">
+          <label htmlFor="user-admin-role-filter" className="sr-only">
+            Filter by user category
+          </label>
+          <select
+            id="user-admin-role-filter"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+          >
+            <option value="">All Categories ({users.length})</option>
+            <option value="judge">Judge</option>
+            <option value="clerk">Registry Clerk</option>
+            <option value="lawyer">Advocate</option>
+            <option value="police">Police / Investigating Officer</option>
+            <option value="citizen">Citizen / Litigant</option>
+            <option value="auditor">Auditor</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
       </div>
 
       {/* User Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">User / Official</th>
-                <th className="py-3 px-4">Persona</th>
-                <th className="py-3 px-4">Court / Registry</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-300">
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-800/40 transition">
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-white">{u.name}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">{u.email}</div>
-                  </td>
-                  <td className="py-3.5 px-4 capitalize font-semibold text-slate-300">
-                    <span className="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-400">
-                    {u.court || 'District Court'}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                      u.status === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                        : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-                    }`}>
-                      {u.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleResetPassword(u)}
-                      title="Reset Password"
-                      className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 transition"
-                    >
-                      <KeyRound className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(u)}
-                      title={u.status === 'active' ? 'Disable Account' : 'Enable Account'}
-                      className={`p-1.5 rounded transition ${
-                        u.status === 'active'
-                          ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400'
-                          : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400'
-                      }`}
-                    >
-                      {u.status === 'active' ? <X className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Create User Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-base font-bold text-white mb-4 pb-2 border-b border-slate-800">
-              Create New Judicial User
-            </h2>
-
-            <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 mb-1 font-medium">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Adv. Amit Saxena"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 mb-1 font-medium">Official Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@court.gov.in"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 mb-1 font-medium">Persona / Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
-                >
-                  <option value="judge">Judge</option>
-                  <option value="clerk">Clerk</option>
-                  <option value="lawyer">Advocate</option>
-                  <option value="police">Police / IO</option>
-                  <option value="citizen">Citizen</option>
-                  <option value="auditor">Auditor</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 mb-1 font-medium">Initial Password (min 10 chars)</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-lg"
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Account'}
-                </button>
-              </div>
-            </form>
+      <Panel
+        title={`Registered Accounts (${filteredUsers.length})`}
+        subtitle="Role-based access credentials with audit logging"
+      >
+        {loading ? (
+          <div className="p-12 text-center text-[#4A4F57]">
+            <div className="w-8 h-8 border-4 border-[#0B2A5B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm font-semibold">Loading user records...</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="overflow-x-auto border border-[#C5CCD6] rounded">
+            <table className="w-full text-left text-sm border-collapse">
+              <caption className="sr-only">Table of registered judicial portal user accounts</caption>
+              <thead>
+                <tr className="bg-[#0B2A5B] text-white">
+                  <th scope="col" className="py-3 px-4 font-semibold text-xs tracking-wider uppercase">User / Official</th>
+                  <th scope="col" className="py-3 px-4 font-semibold text-xs tracking-wider uppercase">Category</th>
+                  <th scope="col" className="py-3 px-4 font-semibold text-xs tracking-wider uppercase">Court / Registry</th>
+                  <th scope="col" className="py-3 px-4 font-semibold text-xs tracking-wider uppercase">Status</th>
+                  <th scope="col" className="py-3 px-4 font-semibold text-xs tracking-wider uppercase text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#C5CCD6] text-[#1A1A1A]">
+                {filteredUsers.map((u, idx) => (
+                  <tr
+                    key={u.id}
+                    className={`hover:bg-[#F4F6FA] transition-colors ${idx % 2 === 1 ? 'bg-[#F4F6FA]/50' : 'bg-white'}`}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-[#0B2A5B]">{u.name}</div>
+                      <div className="text-xs text-[#4A4F57] font-mono">{u.email}</div>
+                    </td>
+                    <td className="py-3 px-4 capitalize">
+                      <span className="bg-[#F4F6FA] px-2 py-0.5 rounded border border-[#C5CCD6] text-xs font-semibold text-[#1A1A1A]">
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-xs text-[#4A4F57]">
+                      {u.court || 'Patiala House Courts'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase border ${
+                        u.status === 'active'
+                          ? 'bg-[#137333]/10 text-[#137333] border-[#137333]/30'
+                          : 'bg-[#B3261E]/10 text-[#B3261E] border-[#B3261E]/30'
+                      }`}>
+                        {u.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleResetPassword(u)}
+                        title="Reset Password"
+                        aria-label={`Reset password for ${u.name}`}
+                        className="p-1.5 rounded bg-white hover:bg-[#F4F6FA] text-[#0B2A5B] border border-[#C5CCD6] transition-colors inline-flex items-center"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(u)}
+                        title={u.status === 'active' ? 'Disable Account' : 'Enable Account'}
+                        aria-label={`${u.status === 'active' ? 'Disable' : 'Enable'} account for ${u.name}`}
+                        className={`p-1.5 rounded border transition-colors inline-flex items-center ${
+                          u.status === 'active'
+                            ? 'bg-white hover:bg-[#B3261E]/10 text-[#B3261E] border-[#C5CCD6]'
+                            : 'bg-white hover:bg-[#137333]/10 text-[#137333] border-[#C5CCD6]'
+                        }`}
+                      >
+                        {u.status === 'active' ? (
+                          <X className="w-3.5 h-3.5" aria-hidden="true" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {/* Accessible Dialog to Create New User */}
+      <Dialog
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Judicial User Account"
+        description="Provision authorized credentials for judicial, court registry, or investigative staff."
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <FormField label="Full Name" required htmlFor="create-user-name">
+            <input
+              id="create-user-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Adv. Amit Saxena"
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <FormField label="Official Email" required htmlFor="create-user-email">
+            <input
+              id="create-user-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@court.gov.in"
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <FormField label="User Category / Role" required htmlFor="create-user-role">
+            <select
+              id="create-user-role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            >
+              <option value="judge">Judge / Bench</option>
+              <option value="clerk">Registry Clerk</option>
+              <option value="lawyer">Advocate / Legal Counsel</option>
+              <option value="police">Police / Investigating Officer</option>
+              <option value="citizen">Citizen / Litigant</option>
+              <option value="auditor">Auditor / Vigilance</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </FormField>
+
+          <FormField label="Designated Court / Forum" required htmlFor="create-user-court">
+            <input
+              id="create-user-court"
+              type="text"
+              required
+              value={court}
+              onChange={(e) => setCourt(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <FormField
+            label="Initial Password (min 10 characters)"
+            required
+            htmlFor="create-user-password"
+            hint="User will be prompted to update credentials upon initial session."
+          >
+            <input
+              id="create-user-password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-[#C5CCD6]">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowCreateModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isBusy={isSubmitting}
+              disabled={isSubmitting}
+            >
+              Provision Account
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 };
-

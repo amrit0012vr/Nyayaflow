@@ -43,3 +43,15 @@
 - **Decision:** Implemented deterministic `CitationVerifier` matching cited excerpts against exact page chunks in the DPDP-redacted document vault.
 - **Consequences:** Summaries containing fabricated excerpts are flagged with `citations_verified=False` and withheld from judicial cause lists until bench review.
 
+
+## ADR-009: Indian Government Portal Design System & WCAG 2.1 AA Accessibility Overhaul (GIGW 3.0)
+- **Status:** Accepted
+- **Context:** The initial prototype used a dark neon theme (`bg-slate-950`, amber/cyan glows, rounded cards) reminiscent of commercial developer SaaS products, and included unsupported marketing claims ("immutable", "unhackable", "100%"). Official judicial platforms in India demand a formal, light, highly accessible, bilingual aesthetic complying with the Guidelines for Indian Government Websites (GIGW 3.0) and WCAG 2.1 Level AA.
+- **Decision:**
+  1. **Strict Zero-Tolerance for Official Emblems:** Prohibit use of the State Emblem of India (Lion Capital of Ashoka), the National Flag, the Ashoka Chakra, and "Government of India" / "भारत सरकार" branding. Display the prototype disclaimer notice on every page.
+  2. **Design Tokens & Light Palette:** Standardize on `--c-navy: #0B2A5B`, `--c-surface: #F4F6FA`, `--c-border: #C5CCD6`, and `--c-saffron: #FF9933` (used strictly for decorative non-text underlines/accents).
+  3. **High-Contrast Theme:** Provide toggleable `[data-theme="contrast"]` offering high-contrast black/yellow/white styling.
+  4. **Self-Hosted Offline Fonts:** Bundle `@fontsource/noto-sans`, `@fontsource/noto-sans-devanagari`, and `@fontsource/noto-sans-oriya` locally to eliminate external Google Font CDN dependencies, third-party tracking, and offline air-gapped failures.
+  5. **Accessible Shell & Controls:** Deploy a 36px utility bar (skip link, screen reader link, A-/A/A+ root font resizer, contrast toggle, language switcher), bilingual branding header, 48px role-based navbar, and 3-column policy footer with real build date (`VITE_BUILD_DATE`) and Git SHA (`VITE_GIT_SHA`).
+  6. **Automated Axe-Core Auditing:** Integrate `axe-core` tests in Vitest to guarantee 0 critical or serious WCAG violations.
+- **Consequences:** Provides an authentic, credible, dignified, accessible judicial decision-support portal interface ready for institutional judicial evaluation.

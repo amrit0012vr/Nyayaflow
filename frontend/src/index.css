@@ -1,28 +1,205 @@
+@import "@fontsource/noto-sans/400.css";
+@import "@fontsource/noto-sans/600.css";
+@import "@fontsource/noto-sans/700.css";
+@import "@fontsource/noto-sans-devanagari/400.css";
+@import "@fontsource/noto-sans-devanagari/600.css";
+@import "@fontsource/noto-sans-devanagari/700.css";
+@import "@fontsource/noto-sans-oriya/400.css";
+@import "@fontsource/noto-sans-oriya/600.css";
+@import "@fontsource/noto-sans-oriya/700.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --c-bg: #FFFFFF;
+  --c-surface: #F4F6FA;
+  --c-text: #1A1A1A;
+  --c-text-muted: #4A4F57;
+  --c-border: #C5CCD6;
+  --c-navy: #0B2A5B;
+  --c-navy-dark: #071C3F;
+  --c-blue: #0B5FA5;
+  --c-saffron: #FF9933;
+  --c-green: #138808;
+  --c-danger: #B3261E;
+  --c-warning-bg: #FFF4E5;
+  --c-focus: #FFBF47;
+
+  font-family: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Oriya", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--c-text);
+  background-color: var(--c-bg);
 }
 
-.font-serif-legal {
-  font-family: 'Merriweather', Georgia, serif;
+[data-theme="contrast"] {
+  --c-bg: #000000;
+  --c-surface: #121212;
+  --c-text: #FFFFFF;
+  --c-text-muted: #E0E0E0;
+  --c-border: #FFFFFF;
+  --c-navy: #000000;
+  --c-navy-dark: #1F1F1F;
+  --c-blue: #FFD700;
+  --c-saffron: #FFD700;
+  --c-green: #00FF00;
+  --c-danger: #FF6B6B;
+  --c-warning-bg: #1A1A00;
+  --c-focus: #FFD700;
 }
 
-/* Custom scrollbar */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility focus indicator (P0 - WCAG 2.1 AA) */
+:focus-visible {
+  outline: 3px solid var(--c-focus) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 5px var(--c-navy) !important;
+}
+
+[data-theme="contrast"] :focus-visible {
+  outline: 3px solid #FFD700 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 5px #FFFFFF !important;
+}
+
+/* Typography standards */
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--c-navy);
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 1.375rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--c-navy);
+  margin-top: 0;
+}
+
+h3 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--c-navy);
+  margin-top: 0;
+}
+
+[data-theme="contrast"] h1,
+[data-theme="contrast"] h2,
+[data-theme="contrast"] h3 {
+  color: #FFFFFF;
+}
+
+p {
+  max-width: 70ch;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--c-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--c-navy-dark);
+}
+
+[data-theme="contrast"] a {
+  color: #FFD700;
+}
+
+/* Interactive elements minimum touch target */
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
+/* Inline small control exceptions */
+.inline-control {
+  min-height: auto;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Clean government portal scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  width: 8px;
+  height: 8px;
 }
 
+::-webkit-scrollbar-track {
+  background: var(--c-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--c-navy);
+}
+
+/* Print styles (§5) */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+
+  .no-print,
+  nav,
+  header,
+  footer,
+  .utility-bar,
+  .notice-strip {
+    display: none !important;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    border: 1px solid #333333;
+    padding: 6px;
+  }
+}

@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { api } from '../../lib/api';
-import { MessageSquare, Send, Phone, AlertCircle, ArrowLeft } from 'lucide-react';
+import {
+  MessageSquare,
+  Send,
+  Phone,
+  ArrowLeft,
+  Scale,
+  Sparkles
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
 
 export const LegalAidChat: React.FC<{ language?: string }> = ({ language = 'en' }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Array<{ role: string; text: string; disclaimer?: string }>>([
     {
       role: 'assistant',
-      text: language === 'hi'
-        ? 'नमस्ते! मैं न्यायफ्लो का विधिक सहायता सहायक हूँ। क्या आप मुफ़्त वकील, जमानत के नियमों या अपने मामले की प्रक्रिया के बारे में जानना चाहते हैं?'
-        : language === 'or'
-        ? 'ନମସ୍କାର! ମୁଁ ନ୍ୟାୟଫ୍ଲୋ ର ମାଗଣା ଆଇନ ସହାୟକ। ଆପଣଙ୍କୁ ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?'
-        : 'Namaste! I am NyayaFlow’s Legal Aid Assistant. You can ask about your statutory rights under Indian law, check eligibility for free court-appointed counsel, or get procedural guidance.'
+      text:
+        language === 'hi'
+          ? 'नमस्ते! मैं न्यायफ्लो का विधिक सहायता सहायक हूँ। क्या आप मुफ़्त वकील, जमानत के नियमों या अपने मामले की प्रक्रिया के बारे में जानना चाहते हैं?'
+          : language === 'or'
+          ? 'ନମସ୍କାର! ମୁଁ ନ୍ୟାୟଫ୍ଲୋ ର ମାଗଣା ଆଇନ ସହାୟକ। ଆପଣଙ୍କୁ ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?'
+          : 'Namaste! I am NyayaFlow’s Legal Aid Assistant. You can ask about your statutory rights under Indian law, check eligibility for free court-appointed counsel, or get procedural guidance.'
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -57,39 +66,40 @@ export const LegalAidChat: React.FC<{ language?: string }> = ({ language = 'en' 
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col h-[calc(100vh-140px)]">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+    <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col h-[calc(100vh-160px)]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#C5CCD6]">
         <button
+          type="button"
           onClick={() => navigate('/citizen')}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
+          className="flex items-center gap-1.5 text-xs text-[#0B2A5B] font-semibold hover:underline"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Back to Citizen Home</span>
         </button>
-        <div className="flex items-center gap-2 text-xs text-amber-400 font-semibold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-          <Phone className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2 text-xs text-[#0B2A5B] font-bold bg-[#0B2A5B]/10 px-3 py-1 rounded border border-[#0B2A5B]/20">
+          <Phone className="w-3.5 h-3.5 text-[#FF9933]" aria-hidden="true" />
           <span>NALSA Helpline: 15100</span>
         </div>
       </div>
 
       {/* Chat Messages Box */}
-      <div className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 overflow-y-auto space-y-4 mb-4 shadow-inner">
+      <div className="flex-1 bg-white border border-[#C5CCD6] rounded p-4 sm:p-6 overflow-y-auto space-y-4 mb-4 shadow-sm" role="log" aria-live="polite">
         {messages.map((m, idx) => (
           <div
             key={idx}
             className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[85%] sm:max-w-[75%] rounded p-4 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === 'user'
-                  ? 'bg-amber-500 text-slate-950 font-medium rounded-br-none shadow-md'
-                  : 'bg-slate-800/90 text-slate-200 border border-slate-700/80 rounded-bl-none shadow-md'
+                  ? 'bg-[#0B2A5B] text-white rounded-br-none'
+                  : 'bg-[#F4F6FA] text-[#1A1A1A] border border-[#C5CCD6] rounded-bl-none'
               }`}
             >
               {m.text}
               {m.disclaimer && (
-                <div className="mt-2.5 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 italic">
+                <div className="mt-2.5 pt-2 border-t border-[#C5CCD6] text-[11px] text-[#4A4F57] italic">
                   {m.disclaimer}
                 </div>
               )}
@@ -99,8 +109,8 @@ export const LegalAidChat: React.FC<{ language?: string }> = ({ language = 'en' 
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 text-xs text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <div className="bg-[#F4F6FA] border border-[#C5CCD6] rounded p-3 text-xs text-[#4A4F57] flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#0B2A5B] animate-ping" />
               <span>Consulting statutory guidelines...</span>
             </div>
           </div>
@@ -108,12 +118,13 @@ export const LegalAidChat: React.FC<{ language?: string }> = ({ language = 'en' 
       </div>
 
       {/* Suggested prompts */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-2" role="group" aria-label="Suggested legal queries">
         {sampleQuestions.map((q, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => handleSendMessage(q)}
-            className="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap transition"
+            className="text-xs bg-white hover:bg-[#F4F6FA] text-[#0B2A5B] border border-[#C5CCD6] hover:border-[#0B2A5B] px-3 py-1.5 rounded whitespace-nowrap transition-colors font-medium shrink-0"
           >
             {q}
           </button>
@@ -128,23 +139,27 @@ export const LegalAidChat: React.FC<{ language?: string }> = ({ language = 'en' 
         }}
         className="flex gap-2"
       >
+        <label htmlFor="citizen-chat-input" className="sr-only">
+          Ask a question about legal aid or procedures
+        </label>
         <input
+          id="citizen-chat-input"
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type your legal aid or procedural question in English, हिन्दी, or ଓଡ଼ିଆ..."
-          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+          placeholder="Type your question in English, हिन्दी, or ଓଡ଼ିଆ..."
+          className="flex-1 bg-white border border-[#C5CCD6] rounded px-4 py-2.5 text-sm text-[#1A1A1A] placeholder-[#757575] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
         />
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={loading || !inputMessage.trim()}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-5 py-3 rounded-xl transition disabled:opacity-50 flex items-center gap-2"
+          className="flex items-center gap-2 px-5"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline">Send</span>
-        </button>
+        </Button>
       </form>
     </div>
   );
 };
-

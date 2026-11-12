@@ -3,7 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Case } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Briefcase, Calendar, FileText, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import {
+  Briefcase,
+  Calendar,
+  Clock,
+  ArrowRight,
+  Scale
+} from 'lucide-react';
+import { Panel } from '../components/ui/Panel';
+import { StatusChip, ChipVariant } from '../components/ui/StatusChip';
+import { InlineBanner } from '../components/ui/InlineBanner';
 
 export const MyCasesPage: React.FC = () => {
   const { user } = useAuth();
@@ -26,91 +35,117 @@ export const MyCasesPage: React.FC = () => {
     loadAssignedCases();
   }, []);
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs uppercase tracking-wider text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-              {user?.role === 'lawyer' ? 'Bar Counsel Docket' : 'Law Enforcement Docket'}
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">My Assigned Court Matters</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Matters where you are the designated {user?.role === 'lawyer' ? 'Advocate on Record' : 'Investigating Officer'}.
-          </p>
-        </div>
+  const mapTierToVariant = (tier?: string): ChipVariant => {
+    switch (tier?.toLowerCase()) {
+      case 'critical':
+        return 'critical';
+      case 'high':
+        return 'high';
+      case 'normal':
+        return 'normal';
+      default:
+        return 'low';
+    }
+  };
 
-        <div className="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl">
-          Total Assigned: <strong className="text-white text-sm ml-1">{cases.length}</strong>
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+          <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+          <span>
+            {user?.role === 'lawyer' ? 'Advocate on Record Docket' : 'Investigating Agency Docket'}
+          </span>
         </div>
+        <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+          My Assigned Court Matters
+        </h1>
+        <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+        <p className="text-sm text-[#4A4F57] max-w-3xl">
+          Matters where you are the designated {user?.role === 'lawyer' ? 'Advocate on Record' : 'Investigating Officer'}.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-xs text-slate-400">
-          Loading assigned case files...
-        </div>
-      ) : error ? (
-        <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-6 text-xs text-rose-300">
+      {error && (
+        <InlineBanner variant="danger" title="Error Loading Cases">
           {error}
-        </div>
-      ) : cases.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
-          <Briefcase className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h2 className="text-sm font-semibold text-slate-300 mb-1">No Assigned Matters</h2>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            You do not currently have any active judicial files assigned in your docket.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {cases.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => navigate(`/cases/${c.id}`)}
-              className="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 cursor-pointer transition hover:bg-slate-800/40 flex flex-col justify-between group shadow-sm"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-mono font-bold text-amber-400">
-                    {c.case_number}
-                  </span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
-                    c.triage_tier === 'critical'
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                      : c.triage_tier === 'high'
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}>
-                    {c.triage_tier || 'UNRANKED'}
-                  </span>
-                </div>
-
-                <h2 className="text-sm font-bold text-white mb-2 line-clamp-1 group-hover:text-emerald-300 transition-colors">
-                  {c.title}
-                </h2>
-
-                <div className="space-y-1 text-xs text-slate-400 mb-4">
-                  <div><strong>Court:</strong> {c.court}</div>
-                  <div><strong>Type:</strong> {c.case_type}</div>
-                  {c.custody_flag && (
-                    <div className="text-rose-400 font-medium flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Accused in judicial custody</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 group-hover:text-emerald-400 transition-colors">
-                <span>Open Dossier & Brief</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          ))}
-        </div>
+        </InlineBanner>
       )}
+
+      <Panel
+        title="Assigned Matters List"
+        subtitle={`Total active listings: ${cases.length}`}
+      >
+        {loading ? (
+          <div className="p-12 text-center text-[#4A4F57]">
+            <div className="w-8 h-8 border-4 border-[#0B2A5B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm font-semibold">Loading assigned case files...</p>
+          </div>
+        ) : cases.length === 0 ? (
+          <div className="p-12 text-center text-[#4A4F57]">
+            <Briefcase className="w-10 h-10 text-[#C5CCD6] mx-auto mb-3" aria-hidden="true" />
+            <p className="text-base font-bold text-[#1A1A1A]">No Assigned Matters</p>
+            <p className="text-xs mt-1">
+              You do not currently have any active judicial files assigned in your docket.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {cases.map((c) => (
+              <div
+                key={c.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/cases/${c.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/cases/${c.id}`);
+                  }
+                }}
+                className="bg-white border border-[#C5CCD6] hover:border-[#0B2A5B] rounded p-5 cursor-pointer transition-colors shadow-sm flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-mono font-bold text-[#0B2A5B]">
+                      {c.case_number}
+                    </span>
+                    <StatusChip
+                      variant={mapTierToVariant(c.triage_tier)}
+                      label={c.triage_tier?.toUpperCase() || 'LOW'}
+                    />
+                  </div>
+
+                  <h2 className="text-sm font-bold text-[#1A1A1A] mb-2 line-clamp-1 hover:text-[#0B2A5B]">
+                    {c.title}
+                  </h2>
+
+                  <div className="space-y-1 text-xs text-[#4A4F57] mb-4">
+                    <div>
+                      <strong>Court:</strong> {c.court}
+                    </div>
+                    <div>
+                      <strong>Type:</strong> {c.case_type}
+                    </div>
+                    {c.custody_flag && (
+                      <div className="text-[#B3261E] font-semibold flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Accused in judicial custody</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#C5CCD6] flex items-center justify-between text-xs font-semibold text-[#0B2A5B]">
+                  <span>Open Dossier &amp; Brief</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
     </div>
   );
 };
-

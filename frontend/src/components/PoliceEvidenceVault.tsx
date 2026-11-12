@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Case } from '../types';
 import { api } from '../lib/api';
-import { 
-  ShieldCheck, Upload, FileText, Lock, CheckCircle2, 
-  Clock, Hash, Key, AlertCircle, Scale 
+import {
+  ShieldCheck,
+  Upload,
+  Lock,
+  CheckCircle2,
+  Scale
 } from 'lucide-react';
+import { Panel } from './ui/Panel';
+import { Button } from './ui/Button';
+import { FormField } from './ui/FormField';
+import { InlineBanner } from './ui/InlineBanner';
 
 export const PoliceEvidenceVault: React.FC = () => {
   const [cases, setCases] = useState<Case[]>([]);
@@ -16,6 +23,7 @@ export const PoliceEvidenceVault: React.FC = () => {
   );
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadedEvidence, setUploadedEvidence] = useState<any[]>([]);
+  const [bannerMessage, setBannerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchCases = async () => {
     try {
@@ -38,10 +46,11 @@ export const PoliceEvidenceVault: React.FC = () => {
     if (!evidenceText.trim() || !selectedCaseId) return;
 
     setUploading(true);
+    setBannerMessage(null);
     try {
       const file = new File([evidenceText], `${evidenceTitle.replace(/\s+/g, '_')}.txt`, { type: 'text/plain' });
       const res = await api.uploadDocument(selectedCaseId, file, 'medical_report');
-      
+
       const newEntry = {
         title: evidenceTitle,
         category: evidenceCategory,
@@ -50,11 +59,17 @@ export const PoliceEvidenceVault: React.FC = () => {
         size_bytes: res.document_version?.size_bytes,
         timestamp: new Date().toISOString()
       };
-      
+
       setUploadedEvidence((prev) => [newEntry, ...prev]);
-      alert('Evidence cryptographically sealed in vault and recorded in chained audit log!');
+      setBannerMessage({
+        type: 'success',
+        text: 'Evidentiary artifact sealed and recorded into tamper-evident chained audit ledger.'
+      });
     } catch (err: any) {
-      alert(`Evidence upload failed: ${err.message}`);
+      setBannerMessage({
+        type: 'error',
+        text: `Evidence deposit failed: ${err.message}`
+      });
     } finally {
       setUploading(false);
     }
@@ -62,135 +77,166 @@ export const PoliceEvidenceVault: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wider uppercase">
-            <Scale className="w-4 h-4" /> Investigating Officer & Police Evidence Vault
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
-            Tamper-Proof Chain of Custody & Evidence Ingestion
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Every evidentiary artifact is AES-256 encrypted at rest with an immutable SHA-256 hash chained into the judicial audit log.
-          </p>
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+          <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+          <span>Law Enforcement Docket &bull; Investigating Agency Vault</span>
         </div>
+        <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+          Tamper-Evident Chain of Custody &amp; Evidence Ingestion
+        </h1>
+        <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+        <p className="text-sm text-[#4A4F57] max-w-3xl">
+          Evidentiary artifacts are AES-256 encrypted at rest with a tamper-evident SHA-256 hash chained into the judicial audit log.
+        </p>
       </div>
 
+      {bannerMessage && (
+        <InlineBanner
+          variant={bannerMessage.type === 'success' ? 'success' : 'danger'}
+          title={bannerMessage.type === 'success' ? 'Evidence Vault Receipt' : 'Error'}
+        >
+          {bannerMessage.text}
+        </InlineBanner>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upload Form */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Upload className="w-5 h-5 text-amber-400" />
-            Deposit Case Evidence
-          </h2>
-
-          <form onSubmit={handleUploadEvidence} className="space-y-3 text-xs">
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Target Case Docket</label>
-              <select
-                value={selectedCaseId}
-                onChange={(e) => setSelectedCaseId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+        {/* Deposit Evidence Form */}
+        <div className="space-y-6">
+          <Panel title="Deposit Case Evidence">
+            <form onSubmit={handleUploadEvidence} className="space-y-4">
+              <FormField
+                label="Target Judicial Matter"
+                required
+                htmlFor="target-case-docket"
               >
-                {cases.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.case_number} — {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <select
+                  id="target-case-docket"
+                  value={selectedCaseId}
+                  onChange={(e) => setSelectedCaseId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                >
+                  {cases.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.case_number} — {c.title.slice(0, 45)}...
+                    </option>
+                  ))}
+                </select>
+              </FormField>
 
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Evidence Title</label>
-              <input
-                type="text"
-                value={evidenceTitle}
-                onChange={(e) => setEvidenceTitle(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Evidence Classification</label>
-              <select
-                value={evidenceCategory}
-                onChange={(e) => setEvidenceCategory(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+              <FormField
+                label="Evidence Title"
+                required
+                htmlFor="evidence-title-input"
               >
-                <option value="forensic_report">Forensic / Chemical Lab Report</option>
-                <option value="seizure_memo">Seizure Memo / Panchnama</option>
-                <option value="cctv_log">Digital CCTV / Call Detail Record (CDR)</option>
-                <option value="witness_statement">Section 161 CrPC / BNSS 180 Witness Statement</option>
-              </select>
-            </div>
+                <input
+                  id="evidence-title-input"
+                  type="text"
+                  value={evidenceTitle}
+                  onChange={(e) => setEvidenceTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                />
+              </FormField>
 
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Evidence Text / Certified Excerpt</label>
-              <textarea
-                rows={4}
-                value={evidenceText}
-                onChange={(e) => setEvidenceText(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm font-mono"
-              />
-            </div>
+              <FormField
+                label="Evidence Classification"
+                required
+                htmlFor="evidence-category-selector"
+              >
+                <select
+                  id="evidence-category-selector"
+                  value={evidenceCategory}
+                  onChange={(e) => setEvidenceCategory(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                >
+                  <option value="forensic_report">Forensic / Chemical Lab Examination Report</option>
+                  <option value="seizure_memo">Seizure Memo / Panchnama</option>
+                  <option value="cctv_log">Digital CCTV / Call Detail Record (CDR)</option>
+                  <option value="witness_statement">Section 161 CrPC / BNSS 180 Witness Statement</option>
+                </select>
+              </FormField>
 
-            <button
-              type="submit"
-              disabled={uploading}
-              className="w-full py-2.5 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
-            >
-              <Lock className="w-4 h-4" />
-              {uploading ? 'Calculating SHA-256 & Encrypting...' : 'Deposit & Anchor in Hash Chain'}
-            </button>
-          </form>
+              <FormField
+                label="Certified Text / Excerpt"
+                required
+                htmlFor="evidence-content-textarea"
+                hint="Anchors the cryptographic fingerprint in the audit trail."
+              >
+                <textarea
+                  id="evidence-content-textarea"
+                  rows={4}
+                  value={evidenceText}
+                  onChange={(e) => setEvidenceText(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-xs font-mono text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                />
+              </FormField>
+
+              <Button
+                type="submit"
+                variant="primary"
+                isBusy={uploading}
+                disabled={uploading || !selectedCaseId}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Lock className="w-4 h-4" aria-hidden="true" />
+                <span>{uploading ? 'Calculating SHA-256 & Encrypting...' : 'Deposit in Hash Chain'}</span>
+              </Button>
+            </form>
+          </Panel>
         </div>
 
-        {/* Chain of Custody Vault Log */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                Active Chain of Custody Registry
-              </h2>
-              <span className="text-xs px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+        {/* Chain of Custody Records */}
+        <div className="lg:col-span-2 space-y-6">
+          <Panel
+            title="Chain of Custody Registry"
+            subtitle="Cryptographic verification receipts"
+            action={
+              <span className="text-xs px-2.5 py-0.5 rounded bg-[#137333]/15 text-[#137333] border border-[#137333]/30 font-mono font-semibold">
                 Tamper-Evident Active
               </span>
-            </div>
-
-            <p className="text-xs text-slate-400">
-              Below are cryptographic receipts of investigation documents deposited into the judicial evidence vault. Any bit modification invalidates the SHA-256 signature immediately.
+            }
+          >
+            <p className="text-xs text-[#4A4F57] mb-4">
+              Cryptographic receipts of investigation documents deposited into the judicial evidence vault. Any bit modification invalidates the SHA-256 signature immediately.
             </p>
 
             <div className="space-y-3">
               {uploadedEvidence.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                  No newly deposited evidence in this session. Existing seed evidence files are anchored in the Audit Chain.
+                <div className="p-8 text-center text-[#757575] border border-dashed border-[#C5CCD6] rounded">
+                  No newly deposited evidence in this session. Existing evidence files are indexed in the Audit Chain.
                 </div>
               ) : (
                 uploadedEvidence.map((ev, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2 text-xs">
+                  <div
+                    key={i}
+                    className="p-4 bg-[#F4F6FA] border border-[#C5CCD6] rounded space-y-2 text-xs"
+                  >
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-bold text-white text-sm">{ev.title}</span>
-                      <span className="text-emerald-400 font-mono text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Chained
+                      <strong className="text-sm text-[#0B2A5B]">{ev.title}</strong>
+                      <span className="text-[#137333] font-mono text-[11px] bg-[#137333]/10 px-2 py-0.5 rounded border border-[#137333]/20 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> Chained
                       </span>
                     </div>
 
-                    <div className="text-slate-300 font-mono text-[11px] bg-slate-900 p-2.5 rounded-lg border border-slate-800 break-all space-y-1">
-                      <div><strong className="text-amber-400">SHA-256 Digest:</strong> {ev.sha256}</div>
-                      <div><strong className="text-slate-400">Cipher:</strong> AES-256-GCM (Military-Grade)</div>
-                      <div><strong className="text-slate-400">Vault Timestamp:</strong> {ev.timestamp}</div>
+                    <div className="text-[#1A1A1A] font-mono text-[11px] bg-white p-3 rounded border border-[#C5CCD6] break-all space-y-1">
+                      <div>
+                        <strong className="text-[#0B2A5B]">SHA-256 Digest:</strong> {ev.sha256}
+                      </div>
+                      <div>
+                        <strong className="text-[#4A4F57]">Encryption:</strong> AES-256-GCM / HKDF-SHA256
+                      </div>
+                      <div>
+                        <strong className="text-[#4A4F57]">Vault Timestamp:</strong> {ev.timestamp}
+                      </div>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </Panel>
         </div>
       </div>
     </div>
   );
 };
-

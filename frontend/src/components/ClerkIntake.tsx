@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Case } from '../types';
 import { api } from '../lib/api';
-import { 
-  Upload, FileText, CheckCircle2, ShieldCheck, AlertCircle, 
-  ArrowRight, RefreshCw, Lock, Sparkles, Scale 
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  ShieldCheck,
+  AlertCircle,
+  Scale,
+  PlusCircle,
+  FileUp,
+  SlidersHorizontal
 } from 'lucide-react';
+import { Panel } from './ui/Panel';
+import { Button } from './ui/Button';
+import { FormField } from './ui/FormField';
+import { Dialog } from './ui/Dialog';
+import { StatusChip } from './ui/StatusChip';
+import { InlineBanner } from './ui/InlineBanner';
 
 export const ClerkIntake: React.FC = () => {
   const [cases, setCases] = useState<Case[]>([]);
@@ -13,8 +26,9 @@ export const ClerkIntake: React.FC = () => {
   const [docType, setDocType] = useState<string>('bail_application');
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<any>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // New Case Form
+  // New Case Form Modal
   const [showNewCaseModal, setShowNewCaseModal] = useState<boolean>(false);
   const [newCaseNumber, setNewCaseNumber] = useState<string>('');
   const [newCaseTitle, setNewCaseTitle] = useState<string>('');
@@ -50,13 +64,21 @@ export const ClerkIntake: React.FC = () => {
 
     setUploading(true);
     setUploadSuccess(null);
+    setStatusMessage(null);
     try {
       const res = await api.uploadDocument(selectedCaseId, file, docType);
       setUploadSuccess(res);
       setFile(null);
       fetchCases();
+      setStatusMessage({
+        type: 'success',
+        text: 'Document uploaded, PII redacted per DPDP Act (2023), and encrypted into the secure registry repository.'
+      });
     } catch (err: any) {
-      alert(`Upload failed: ${err.message}`);
+      setStatusMessage({
+        type: 'error',
+        text: `Upload failed: ${err.message}`
+      });
     } finally {
       setUploading(false);
     }
@@ -76,11 +98,19 @@ export const ClerkIntake: React.FC = () => {
         vulnerability_reason: newVulnerable ? 'Priority Vulnerable Group' : undefined
       });
       setShowNewCaseModal(false);
+      setNewCaseNumber('');
+      setNewCaseTitle('');
       fetchCases();
       setSelectedCaseId(created.id);
-      alert('Case successfully created in Registry docket!');
+      setStatusMessage({
+        type: 'success',
+        text: `Case ${created.case_number} registered in Registry docket.`
+      });
     } catch (err: any) {
-      alert(`Error creating case: ${err.message}`);
+      setStatusMessage({
+        type: 'error',
+        text: `Error registering case: ${err.message}`
+      });
     }
   };
 
@@ -95,345 +125,446 @@ export const ClerkIntake: React.FC = () => {
       setShowOverrideModal(false);
       setOverrideReason('');
       fetchCases();
-      alert('Triage successfully overridden and recorded in cryptographic audit chain!');
+      setStatusMessage({
+        type: 'success',
+        text: 'Triage urgency successfully overridden and recorded in tamper-evident audit log.'
+      });
     } catch (err: any) {
-      alert(`Override failed: ${err.message}`);
+      setStatusMessage({
+        type: 'error',
+        text: `Override failed: ${err.message}`
+      });
     }
   };
 
+  const selectedCase = cases.find((c) => c.id === selectedCaseId);
+
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wider uppercase">
-            <Scale className="w-4 h-4" /> Court Registry & Document Ingestion Core
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
-            Secure Document Vault & Agentic Processing
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Ingest case records into AES-256 encrypted storage, apply automated PII redaction, and trigger multi-agent pipeline.
-          </p>
+      {/* Page Header */}
+      <div className="border-b border-[#C5CCD6] pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0B2A5B]">
+          <Scale className="w-4 h-4 text-[#FF9933]" aria-hidden="true" />
+          <span>Court Registry Intake &bull; Document Ingestion &amp; Triage</span>
         </div>
+        <h1 className="text-2xl font-bold text-[#0B2A5B] font-display mt-1">
+          Case Filing Intake &amp; Ingestion Center
+        </h1>
+        <div className="w-16 h-[3px] bg-[#FF9933] mt-2 mb-2" />
+        <p className="text-sm text-[#4A4F57] max-w-3xl">
+          Register new judicial matters, upload legal filings with automated DPDP Act (2023) PII redaction, and record formal administrative triage adjustments.
+        </p>
+      </div>
 
+      {statusMessage && (
+        <InlineBanner
+          variant={statusMessage.type === 'success' ? 'success' : 'danger'}
+          title={statusMessage.type === 'success' ? 'Intake Action Completed' : 'Intake Error'}
+        >
+          {statusMessage.text}
+        </InlineBanner>
+      )}
+
+      {/* Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#F4F6FA] border border-[#C5CCD6] p-4 rounded">
+        <div>
+          <span className="text-xs font-bold text-[#0B2A5B] uppercase tracking-wider block">
+            Active Registry Docket
+          </span>
+          <span className="text-sm text-[#1A1A1A]">
+            {cases.length} court matters currently on record
+          </span>
+        </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="primary"
             onClick={() => setShowNewCaseModal(true)}
-            className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/20"
+            className="flex items-center gap-2"
           >
-            + Register New Case Filing
-          </button>
+            <PlusCircle className="w-4 h-4" aria-hidden="true" />
+            <span>Register New Filing</span>
+          </Button>
+          {selectedCase && (
+            <Button
+              variant="secondary"
+              onClick={() => setShowOverrideModal(true)}
+              className="flex items-center gap-2"
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+              <span>Override Triage Priority</span>
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upload & Pipeline Card */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Upload className="w-5 h-5 text-amber-400" />
-            Upload Legal Document into Encrypted Vault
-          </h2>
-
-          <form onSubmit={handleFileUpload} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Target Case Docket</label>
-              <select
-                value={selectedCaseId}
-                onChange={(e) => setSelectedCaseId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+        {/* Left Column: Case Selector & Document Ingestion Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <Panel title="Document Ingestion &amp; Automated Redaction">
+            <form onSubmit={handleFileUpload} className="space-y-4">
+              <FormField
+                label="Target Judicial Matter"
+                required
+                htmlFor="case-selector"
+                hint="Select the case file under which this document should be registered."
               >
-                {cases.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.case_number} — {c.title} ({c.case_type})
-                  </option>
-                ))}
-              </select>
-            </div>
+                <select
+                  id="case-selector"
+                  value={selectedCaseId}
+                  onChange={(e) => setSelectedCaseId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                >
+                  {cases.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.case_number} — {c.title.slice(0, 50)}... ({c.case_type})
+                    </option>
+                  ))}
+                </select>
+              </FormField>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Document Classification Category</label>
-              <select
-                value={docType}
-                onChange={(e) => setDocType(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+              <FormField
+                label="Document Classification Category"
+                required
+                htmlFor="doc-type-selector"
+                hint="Category determines legal section parsing and automated extraction pipelines."
               >
-                <option value="bail_application">Bail Application (CrPC 439 / BNSS 483)</option>
-                <option value="fir">First Information Report (FIR)</option>
-                <option value="charge_sheet">Police Charge Sheet / Final Report (Sec 173)</option>
-                <option value="petition">Writ Petition / Plaint</option>
-                <option value="order">Judicial Order / Judgment</option>
-                <option value="medical_report">Medical / Forensic Examination Report</option>
-              </select>
-            </div>
+                <select
+                  id="doc-type-selector"
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+                >
+                  <option value="bail_application">Bail Application (CrPC / BNSS)</option>
+                  <option value="chargesheet">Police Charge Sheet / Final Form Report</option>
+                  <option value="fir">First Information Report (FIR)</option>
+                  <option value="medical_report">Medico-Legal Examination Report</option>
+                  <option value="order">Previous Judicial Order / Subordinate Court Record</option>
+                </select>
+              </FormField>
 
-            {/* Drag & Drop Area */}
-            <div className="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl p-6 text-center cursor-pointer transition bg-slate-800/40">
-              <input
-                type="file"
-                id="case-doc-file"
-                onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                className="hidden"
-              />
-              <label htmlFor="case-doc-file" className="cursor-pointer block space-y-2">
-                <FileText className="w-10 h-10 text-slate-400 mx-auto" />
-                <div className="text-sm text-slate-200">
-                  {file ? (
-                    <span className="font-semibold text-amber-400">{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                  ) : (
-                    <span>Click to select or drag PDF, scan, or legal text file</span>
-                  )}
-                </div>
-                <div className="text-xs text-slate-500">
-                  Secured with AES-256-GCM at rest & SHA-256 audit chaining
-                </div>
-              </label>
-            </div>
+              <FormField
+                label="Filing Attachment File"
+                required
+                htmlFor="file-upload-input"
+                hint="Accepted formats: PDF, DOCX, TXT. Documents are tokenized for DPDP Act compliance before storage."
+              >
+                <input
+                  id="file-upload-input"
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 text-sm bg-white border border-[#C5CCD6] rounded file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#0B2A5B] file:text-white hover:file:bg-[#071C3F] cursor-pointer"
+                />
+              </FormField>
 
-            <button
-              type="submit"
-              disabled={!file || uploading}
-              className={`w-full py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition ${
-                !file || uploading
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20'
-              }`}
-            >
-              {uploading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Running Pipeline: Encryption → OCR → Redaction → Triage → Summarisation...
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  Encrypt, Seal & Trigger Agent Pipeline
-                </>
-              )}
-            </button>
-          </form>
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isBusy={uploading}
+                  disabled={!file || !selectedCaseId || uploading}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <FileUp className="w-4 h-4" aria-hidden="true" />
+                  <span>{uploading ? 'Processing Ingestion Pipeline...' : 'Upload &amp; Redact Document'}</span>
+                </Button>
+              </div>
+            </form>
+          </Panel>
 
-          {/* Success Banner */}
+          {/* Upload Success & DPDP Redaction Verification */}
           {uploadSuccess && (
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-emerald-400 text-sm">
-                <CheckCircle2 className="w-4 h-4" /> Document Ingested & Pipeline Completed!
+            <Panel
+              title="DPDP Act (2023) Privacy Tokenization &amp; Ingestion Report"
+              subtitle="Tamper-evident verification details"
+            >
+              <div className="space-y-4 text-xs">
+                <div className="p-3 bg-[#137333]/10 border border-[#137333]/30 rounded text-[#137333] font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>Document securely ingested into encrypted storage.</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded">
+                    <span className="text-[#4A4F57] block">Version Number</span>
+                    <strong className="text-sm text-[#0B2A5B] font-mono">
+                      v{uploadSuccess.document_version?.version_no ?? 1}
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded">
+                    <span className="text-[#4A4F57] block">File Size</span>
+                    <strong className="text-sm text-[#0B2A5B] font-mono">
+                      {uploadSuccess.document_version?.size_bytes ?? 0} bytes
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded">
+                    <span className="text-[#4A4F57] block">Encryption Mode</span>
+                    <strong className="text-sm text-[#0B2A5B]">Envelope HKDF-SHA256</strong>
+                  </div>
+                </div>
+
+                {uploadSuccess.pii_redaction && (
+                  <div className="p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded space-y-2">
+                    <div className="flex items-center justify-between font-bold text-[#0B2A5B]">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-[#137333]" aria-hidden="true" />
+                        DPDP Act Tokenized Entities
+                      </span>
+                      <span>{uploadSuccess.pii_redaction.redacted_count} entities replaced</span>
+                    </div>
+                    <p className="text-[#4A4F57]">
+                      Direct identifiers (Aadhaar numbers, PAN, mobile numbers, personal names) were masked before indexing. The original raw text remains sealed under authorized judicial custody.
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="text-slate-300 font-mono text-[11px] space-y-0.5">
-                <div>Version: #{uploadSuccess.document_version?.version_no}</div>
-                <div>SHA-256: {uploadSuccess.document_version?.sha256}</div>
-                <div>Size: {uploadSuccess.document_version?.size_bytes} bytes (AES-256 Encrypted)</div>
-                <div>Triage Tier: <strong className="text-amber-400 uppercase">{uploadSuccess.pipeline_result?.triage?.tier}</strong> ({uploadSuccess.pipeline_result?.triage?.score}/100)</div>
-              </div>
-            </div>
+            </Panel>
           )}
         </div>
 
-        {/* Registry Actions & Override */}
+        {/* Right Column: Active Case Overview */}
         <div className="space-y-6">
-          {/* Clerk Override Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Scale className="w-4 h-4 text-amber-400" /> Human-in-the-Loop Override
-            </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              AI provides advisory triage scores. Authorized Registry Clerks can adjust priority tiers with a mandatory audit reason.
-            </p>
-            <button
-              onClick={() => setShowOverrideModal(true)}
-              className="w-full py-2 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 font-semibold text-xs transition"
-            >
-              Apply Triage Tier Override
-            </button>
-          </div>
+          <Panel title="Active Case Profile">
+            {selectedCase ? (
+              <div className="space-y-4 text-xs">
+                <div>
+                  <span className="font-mono text-sm font-bold text-[#0B2A5B] block">
+                    {selectedCase.case_number}
+                  </span>
+                  <h2 className="text-base font-bold text-[#1A1A1A] mt-1">
+                    {selectedCase.title}
+                  </h2>
+                </div>
 
-          {/* Pipeline Stages Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" /> Pipeline Architecture
-            </h3>
-            <div className="space-y-2 text-xs">
-              <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                <span>1. AES-256 Vault Storage</span>
-                <span className="text-emerald-400 font-mono text-[11px]">Enforced</span>
+                <div className="space-y-2 pt-2 border-t border-[#C5CCD6]">
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Court Forum:</span>
+                    <strong className="text-[#1A1A1A]">{selectedCase.court}</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Case Category:</span>
+                    <strong className="text-[#1A1A1A]">{selectedCase.case_type}</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Current Urgency Tier:</span>
+                    <StatusChip
+                      variant={
+                        selectedCase.triage_tier === 'critical'
+                          ? 'critical'
+                          : selectedCase.triage_tier === 'high'
+                          ? 'high'
+                          : selectedCase.triage_tier === 'normal'
+                          ? 'normal'
+                          : 'low'
+                      }
+                      label={selectedCase.triage_tier?.toUpperCase() || 'UNRANKED'}
+                    />
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Triage Score:</span>
+                    <strong className="text-[#0B2A5B] font-mono">{selectedCase.triage_score ?? 0} / 100</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Ingested Documents:</span>
+                    <strong className="text-[#1A1A1A]">{selectedCase.document_count}</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#F4F6FA]">
+                    <span className="text-[#4A4F57]">Undertrial Custody:</span>
+                    <strong className={selectedCase.custody_flag ? 'text-[#B3261E]' : 'text-[#4A4F57]'}>
+                      {selectedCase.custody_flag ? 'Yes (Active Detention)' : 'No (Bailed / Non-custody)'}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-[#4A4F57]">Vulnerable Party:</span>
+                    <strong className={selectedCase.vulnerable_party ? 'text-[#137333]' : 'text-[#4A4F57]'}>
+                      {selectedCase.vulnerable_party ? selectedCase.vulnerability_reason || 'Yes' : 'No'}
+                    </strong>
+                  </div>
+                </div>
               </div>
-              <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                <span>2. Automated PII Redaction</span>
-                <span className="text-emerald-400 font-mono text-[11px]">DPDP-2023</span>
-              </div>
-              <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                <span>3. Explainable Triage Scoring</span>
-                <span className="text-emerald-400 font-mono text-[11px]">Rule + LLM</span>
-              </div>
-              <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                <span>4. Citation Verifier</span>
-                <span className="text-emerald-400 font-mono text-[11px]">Anti-Hallucination</span>
-              </div>
-              <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                <span>5. Hash-Chain Audit Logging</span>
-                <span className="text-emerald-400 font-mono text-[11px]">Tamper-Proof</span>
-              </div>
-            </div>
-          </div>
+            ) : (
+              <p className="text-xs text-[#4A4F57] py-6 text-center">
+                Select a case from the list to review details.
+              </p>
+            )}
+          </Panel>
         </div>
       </div>
 
-      {/* New Case Modal */}
-      {showNewCaseModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
-            <h2 className="text-lg font-bold text-white">Register New Filing Docket</h2>
-            <form onSubmit={handleCreateCase} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Case Number (or leave blank for auto)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. BAIL/DEL/2026/0991"
-                  value={newCaseNumber}
-                  onChange={(e) => setNewCaseNumber(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-              </div>
+      {/* Register New Case Accessible Dialog */}
+      <Dialog
+        isOpen={showNewCaseModal}
+        onClose={() => setShowNewCaseModal(false)}
+        title="Register New Judicial Case File"
+        description="Fill in mandatory statutory parameters for automated triage and cause listing."
+      >
+        <form onSubmit={handleCreateCase} className="space-y-4">
+          <FormField
+            label="Case Number"
+            required
+            htmlFor="new-case-number"
+            hint="Leave blank to auto-generate a valid registry docket identifier."
+          >
+            <input
+              id="new-case-number"
+              type="text"
+              placeholder="e.g. BAIL/DEL/2026/1042"
+              value={newCaseNumber}
+              onChange={(e) => setNewCaseNumber(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Case Title / Cause Title</label>
-                <input
-                  type="text"
+          <FormField
+            label="Case Title (Parties Involved)"
+            required
+            htmlFor="new-case-title"
+            hint="e.g. State (NCT of Delhi) v. Ramesh Kumar &amp; Anr."
+          >
+            <input
+              id="new-case-title"
+              type="text"
+              required
+              placeholder="State v. Accused Party"
+              value={newCaseTitle}
+              onChange={(e) => setNewCaseTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <FormField
+            label="Matter Classification"
+            required
+            htmlFor="new-case-type"
+          >
+            <select
+              id="new-case-type"
+              value={newCaseType}
+              onChange={(e) => setNewCaseType(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            >
+              <option value="Bail Application">Bail Application (Regular / Anticipatory)</option>
+              <option value="Criminal Trial">Criminal Trial (Chargesheet Ingested)</option>
+              <option value="Civil Suit">Civil Suit</option>
+              <option value="Appellate Review">Appellate Review</option>
+            </select>
+          </FormField>
+
+          <div className="space-y-2 p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#1A1A1A]">
+              <input
+                type="checkbox"
+                checked={newCustodyFlag}
+                onChange={(e) => setNewCustodyFlag(e.target.checked)}
+                className="w-4 h-4 text-[#0B2A5B] border-[#C5CCD6] rounded focus:ring-[#0B2A5B]"
+              />
+              <span>Accused party is currently held in judicial custody (undertrial)</span>
+            </label>
+
+            {newCustodyFlag && (
+              <div className="pt-2 pl-6">
+                <FormField
+                  label="Custody Commencement Date"
                   required
-                  placeholder="e.g. Suresh Patel vs. State of Delhi"
-                  value={newCaseTitle}
-                  onChange={(e) => setNewCaseTitle(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Case Type</label>
-                <select
-                  value={newCaseType}
-                  onChange={(e) => setNewCaseType(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                  htmlFor="custody-date"
+                  hint="Used to calculate undertrial detention duration for Article 21 / CrPC Sec 436A priority."
                 >
-                  <option value="Bail Application">Bail Application (CrPC 439 / BNSS 483)</option>
-                  <option value="Writ Petition">Writ Petition (Article 226)</option>
-                  <option value="Criminal Trial">Criminal Trial (Sessions)</option>
-                  <option value="Commercial Suit">Commercial Suit</option>
-                  <option value="Habeas Corpus">Habeas Corpus</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-300">
                   <input
-                    type="checkbox"
-                    checked={newCustodyFlag}
-                    onChange={(e) => setNewCustodyFlag(e.target.checked)}
-                    className="rounded text-amber-500"
-                  />
-                  Under-Trial In Custody
-                </label>
-              </div>
-
-              {newCustodyFlag && (
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Custody Since Date</label>
-                  <input
+                    id="custody-date"
                     type="date"
                     value={newCustodySince}
                     onChange={(e) => setNewCustodySince(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                    className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
                   />
-                </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={newVulnerable}
-                    onChange={(e) => setNewVulnerable(e.target.checked)}
-                    className="rounded text-amber-500"
-                  />
-                  Priority Litigant (Senior Citizen / Minor / Disability)
-                </label>
+                </FormField>
               </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowNewCaseModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400"
-                >
-                  Confirm Registration
-                </button>
-              </div>
-            </form>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* Override Modal */}
-      {showOverrideModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <h2 className="text-lg font-bold text-white">Judicial Triage Override</h2>
-            <p className="text-xs text-slate-400">
-              Every override is cryptographically logged in the tamper-evident audit trail with your name and justification.
-            </p>
-
-            <form onSubmit={handleOverride} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Select New Urgency Tier</label>
-                <select
-                  value={overrideTier}
-                  onChange={(e) => setOverrideTier(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                >
-                  <option value="critical">Critical Tier (Immediate Listing)</option>
-                  <option value="high">High Tier</option>
-                  <option value="normal">Normal Tier</option>
-                  <option value="low">Low Tier</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Mandatory Justification Reason</label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="e.g. Urgent medical bail request certified by Chief Medical Officer..."
-                  value={overrideReason}
-                  onChange={(e) => setOverrideReason(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowOverrideModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400"
-                >
-                  Record Override in Audit Trail
-                </button>
-              </div>
-            </form>
+          <div className="p-3 bg-[#F4F6FA] border border-[#C5CCD6] rounded">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#1A1A1A]">
+              <input
+                type="checkbox"
+                checked={newVulnerable}
+                onChange={(e) => setNewVulnerable(e.target.checked)}
+                className="w-4 h-4 text-[#0B2A5B] border-[#C5CCD6] rounded focus:ring-[#0B2A5B]"
+              />
+              <span>Matter involves vulnerable party (senior citizen, child, victim of trafficking)</span>
+            </label>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-[#C5CCD6]">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowNewCaseModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Register Case
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Override Triage Modal */}
+      <Dialog
+        isOpen={showOverrideModal}
+        onClose={() => setShowOverrideModal(false)}
+        title="Administrative Triage Urgency Override"
+        description="Override automated rule scoring with formal judicial or administrative justification."
+      >
+        <form onSubmit={handleOverride} className="space-y-4">
+          <FormField
+            label="Target Urgency Tier"
+            required
+            htmlFor="override-tier"
+            hint="Adjusts cause list scheduling order and bench notification urgency."
+          >
+            <select
+              id="override-tier"
+              value={overrideTier}
+              onChange={(e) => setOverrideTier(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            >
+              <option value="critical">Critical Priority (Immediate Bench Listing)</option>
+              <option value="high">High Urgency (Listing within 48 Hours)</option>
+              <option value="normal">Normal (Standard Docket Timeline)</option>
+              <option value="low">Low (Awaiting Counter-Affidavits)</option>
+            </select>
+          </FormField>
+
+          <FormField
+            label="Mandatory Reason for Override"
+            required
+            htmlFor="override-reason"
+            hint="Must specify judicial direction, medical emergency, or bench order reference. Logged in audit trail."
+          >
+            <textarea
+              id="override-reason"
+              required
+              rows={3}
+              placeholder="e.g. As per oral mentioning before Bench 02, medical grounds require urgent bail hearing."
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-[#C5CCD6] rounded text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0B2A5B]"
+            />
+          </FormField>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-[#C5CCD6]">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowOverrideModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Save Triage Override
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 };
-
