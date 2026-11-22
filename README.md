@@ -222,13 +222,46 @@ npm run build
 
 ---
 
+## 📁 Project Structure
+
+```text
+nyayaflow/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/         # Role-guarded API endpoints
+│   │   ├── core/           # Security, permissions & tokenization
+│   │   ├── db/             # SQLAlchemy models & sessions
+│   │   ├── agents/         # Triage, summarisation, scheduling & legal aid
+│   │   └── services/       # Cryptographic audit & storage
+│   ├── tests/              # 55+ automated pytest suites
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/     # Reusable UI components & persona portals
+│   │   ├── pages/          # Judge, Clerk, Advocate, Police, Citizen, Auditor views
+│   │   └── lib/            # Auth, API client & route guards
+│   ├── package.json
+│   └── vite.config.ts
+├── scripts/                # Seeding, audit anchoring & evaluation scripts
+├── docs/                   # Technical architecture & design decisions
+├── docker-compose.yml
+└── README.md
+```
+
+## 🔮 Future Improvements
+- Integration with national judicial databases (eCourts / NJDG API integration).
+- Expansion of multilingual speech-to-text models (Bhashini / IndicWhisper) for spoken regional legal depositions.
+- Distributed Byzantine fault-tolerant ledger anchoring for state-wide appellate synchronization.
+
 ## ⚖️ Limitations & Prototype Disclaimer
 
 - **Decision-Support Only:** NyayaFlow does not make final legal adjudications or determine case outcomes. It prepares briefs, verifies citations, ranks queues, and suggests conflict-free schedules for human review.
 - **Offline Mode by Default:** The platform is fully operational without third-party LLM dependencies (`LLM_PROVIDER=none`). Rule-based deterministic extraction ensures that courts with low connectivity or strict data sovereignty regulations can run locally.
 - **Not Certified for Production Adjudication:** This software is an open-source prototype submitted for evaluation. Production deployment requires formal judicial security audit and infrastructure integration.
 
----
-
 ## 📜 Licence
 Licensed under the **Apache License, Version 2.0**. See [LICENSE](LICENSE) for details.
+
+## 👤 Author
+**Amrit Preetam Nayak** — [GitHub](https://github.com/amrit0012vr) • [LinkedIn](https://www.linkedin.com/in/amrit-preetam-nayak-667a7232b/)
+
